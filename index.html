@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI 与词元经济数据看板</title>
+<meta name="description" content="Token 经济数据看板：词元价格天梯、模型发展速率、数据中心用电与算力供给、股价走势。数据均来自公开可核查来源。">
+<meta name="author" content="爱广潮市">
+<meta name="theme-color" content="#165DFF">
+<meta property="og:type" content="website">
+<meta property="og:title" content="AI 与词元经济数据看板">
+<meta property="og:description" content="算力 · 能耗 · 词元价格 · 资本市场的十年变化。可交互切换等比/等差纵坐标、自由设定范围。">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23165DFF'/%3E%3Ctext x='16' y='23' font-size='19' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#eef1f5; --card:#fff; --ink:#1b2330; --sub:#6b7686; --line:#e2e7ee;
+  --accent:#165DFF; --accent2:#0b3fa8;
+}
+body{background:var(--bg);color:var(--ink);
+  font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,sans-serif;
+  font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1240px;margin:0 auto;padding:20px 18px 60px}
+header{background:linear-gradient(135deg,#0b2545,#165DFF);color:#fff;border-radius:16px;
+  padding:26px 28px;margin-bottom:18px;box-shadow:0 8px 26px rgba(11,37,69,.18)}
+header h1{font-size:25px;letter-spacing:.5px}
+header .sub{opacity:.86;margin-top:6px;font-size:13.5px}
+header .meta{margin-top:12px;font-size:12px;opacity:.7}
+nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+nav button{border:1px solid var(--line);background:#fff;color:var(--sub);
+  padding:8px 16px;border-radius:999px;cursor:pointer;font-size:13.5px;
+  font-family:inherit;transition:.16s;white-space:nowrap}
+nav button:hover{border-color:#b9c6dc;color:var(--ink)}
+nav button.on{background:var(--accent);border-color:var(--accent);color:#fff;
+  box-shadow:0 4px 12px rgba(22,93,255,.28)}
+.card{background:var(--card);border-radius:14px;padding:20px 22px;margin-bottom:16px;
+  box-shadow:0 2px 10px rgba(20,40,80,.06)}
+.card h2{font-size:17px;margin-bottom:4px}
+.card h2 .tag{font-size:11.5px;font-weight:400;color:var(--sub);
+  background:#f1f4f9;padding:2px 8px;border-radius:6px;margin-left:8px;vertical-align:2px}
+.card .desc{color:var(--sub);font-size:12.5px;margin-bottom:14px}
+.ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:14px}
+.ctrl input[type=search],.ctrl select{font-family:inherit;font-size:13px;padding:7px 11px;
+  border:1px solid var(--line);border-radius:9px;background:#fbfcfe;color:var(--ink);outline:none}
+.ctrl input[type=search]{width:220px}
+.ctrl input[type=search]:focus,.ctrl select:focus{border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(22,93,255,.12)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;
+  border:1px solid var(--line);background:#fff;cursor:pointer;font-size:12.5px;
+  color:var(--sub);user-select:none;transition:.14s}
+.chip i{width:9px;height:9px;border-radius:50%;display:block}
+.chip.on{background:#eef4ff;border-color:var(--accent);color:var(--ink);font-weight:600}
+.lbl{font-size:12.5px;color:var(--sub)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--sub);font-weight:600;font-size:12.5px;background:#f7f9fc;
+  position:sticky;top:0;cursor:pointer;white-space:nowrap}
+th:hover{color:var(--accent)}
+td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tbody tr:hover{background:#f7faff}
+.scroll{max-height:620px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px}
+.src{font-size:11.5px;color:#8b96a5;margin-top:12px;line-height:1.9}
+.src b{color:var(--sub);font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;
+  vertical-align:middle}
+.seg button{border:0;background:#fff;color:var(--sub);padding:6px 13px;font-size:12.5px;
+  cursor:pointer;font-family:inherit;transition:.14s;white-space:nowrap}
+.seg button:hover{color:var(--ink)}
+.seg button.on{background:var(--accent);color:#fff}
+.axwrap{display:inline-flex;align-items:center;gap:7px;flex-wrap:wrap}
+.axnum{width:84px;font-family:inherit;font-size:12.5px;padding:5px 8px;border:1px solid var(--line);
+  border-radius:8px;background:#fbfcfe;color:var(--ink);outline:none}
+.axnum:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(22,93,255,.12)}
+.axreset{border:1px solid var(--line);background:#fff;color:var(--sub);padding:5px 11px;
+  border-radius:8px;font-size:12.5px;font-family:inherit;cursor:pointer;transition:.14s}
+.axreset:hover{color:var(--ink);border-color:#b9c6dc}
+.tip{position:fixed;pointer-events:none;background:rgba(20,28,42,.95);color:#fff;
+  padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.6;z-index:99;
+  opacity:0;transition:opacity .12s;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.24)}
+.tip.on{opacity:1}
+.kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;
+  margin-bottom:16px}
+.kpi div{background:#f7f9fc;border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+.kpi .v{font-size:20px;font-weight:700;color:var(--accent2);letter-spacing:-.4px}
+.kpi .k{font-size:12px;color:var(--sub);margin-top:2px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+.axis{font-size:11px;fill:#8b96a5}
+.grid{stroke:#e9edf3;stroke-width:1}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:12.5px;color:var(--sub)}
+.legend span{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.legend span.off{opacity:.32}
+.legend i{width:14px;height:3px;border-radius:2px;display:block}
+.legend i.sq{width:10px;height:10px;border-radius:50%}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <h1>AI 与词元经济数据看板</h1>
+  <div class="sub">算力 · 能耗 · 词元价格 · 资本市场的十年变化　｜　数据均为公开可核查来源</div>
+  <div class="meta">为 Find「凡能仙·今经乐道」经济热点分析大赛整理　·　2026-10-11　·　
+    价格数据：LiteLLM 官方挂牌价库　·　发布日期：OpenRouter 模型时间戳</div>
+</header>
+<nav id="nav"></nav>
+<main id="view"></main>
+</div>
+<div class="tip" id="tip"></div>
+<script>
+const DATA = {"vendors":{"openai":["OpenAI","#1F3864"],"anthropic":["Anthropic","#C00000"],"google":["Google","#2E75B6"],"qwen":["阿里通义","#ED7D31"],"deepseek":["DeepSeek","#548235"],"z-ai":["智谱 GLM","#7030A0"],"moonshotai":["月之暗面 Kimi","#0E9AA7"],"x-ai":["xAI","#7F7F7F"],"mistralai":["Mistral","#BF9000"],"minimax":["MiniMax","#79A857"],"bytedance-seed":["字节豆包","#E8A33D"]},"models":[{"k":"text-embedding-3-small","n":"text-embedding-3-small","v":"openai","i":0.02,"o":0.0,"d":""},{"k":"dashscope/qwen-turbo","n":"qwen-turbo","v":"qwen","i":0.05,"o":0.2,"d":"2024-09-19"},{"k":"dashscope/qwen-turbo-2024-11-01","n":"qwen-turbo-2024-11-01","v":"qwen","i":0.05,"o":0.2,"d":"2024-11-01"},{"k":"dashscope/qwen-turbo-2025-04-28","n":"qwen-turbo-2025-04-28","v":"qwen","i":0.05,"o":0.2,"d":"2025-04-28"},{"k":"dashscope/qwen-turbo-latest","n":"qwen-turbo-latest","v":"qwen","i":0.05,"o":0.2,"d":""},{"k":"gpt-5-nano","n":"gpt-5-nano","v":"openai","i":0.05,"o":0.4,"d":"2025-08-07"},{"k":"gpt-5-nano-2025-08-07","n":"gpt-5-nano-2025-08-07","v":"openai","i":0.05,"o":0.4,"d":"2025-08-07"},{"k":"gemini-2.5-flash-lite","n":"gemini-2.5-flash-lite","v":"google","i":0.1,"o":0.4,"d":"2025-07-22"},{"k":"gemini-2.5-flash-lite-preview-09-2025","n":"gemini-2.5-flash-lite-preview-09-2025","v":"google","i":0.1,"o":0.4,"d":""},{"k":"gpt-4.1-nano","n":"gpt-4.1-nano","v":"openai","i":0.1,"o":0.4,"d":"2025-04-14"},{"k":"gpt-4.1-nano-2025-04-14","n":"gpt-4.1-nano-2025-04-14","v":"openai","i":0.1,"o":0.4,"d":"2025-04-14"},{"k":"gpt-6-luna","n":"gpt-6-luna","v":"openai","i":0.1,"o":0.5,"d":"2026-09-22"},{"k":"mistral/devstral-small-latest","n":"devstral-small-latest","v":"mistralai","i":0.1,"o":0.3,"d":""},{"k":"mistral/ministral-3b-2512","n":"ministral-3b-2512","v":"mistralai","i":0.1,"o":0.1,"d":"2025-12-02"},{"k":"mistral/ministral-3b-latest","n":"ministral-3b-latest","v":"mistralai","i":0.1,"o":0.1,"d":""},{"k":"mistral/mistral-embed-2312","n":"mistral-embed-2312","v":"mistralai","i":0.1,"o":0.0,"d":""},{"k":"mistral/voxtral-small-2507","n":"voxtral-small-2507","v":"mistralai","i":0.1,"o":0.4,"d":""},{"k":"mistral/voxtral-small-latest","n":"voxtral-small-latest","v":"mistralai","i":0.1,"o":0.4,"d":""},{"k":"mistral/mistral-embed","n":"mistral-embed","v":"mistralai","i":0.1,"o":0.0,"d":""},{"k":"mistral/mistral-small","n":"mistral-small","v":"mistralai","i":0.1,"o":0.3,"d":""},{"k":"mistral/ministral-3-3b-2512","n":"ministral-3-3b-2512","v":"mistralai","i":0.1,"o":0.1,"d":""},{"k":"text-embedding-ada-002","n":"text-embedding-ada-002","v":"openai","i":0.1,"o":0.0,"d":""},{"k":"text-embedding-ada-002-v2","n":"text-embedding-ada-002-v2","v":"openai","i":0.1,"o":0.0,"d":""},{"k":"zai/glm-4-32b-0414-128k","n":"glm-4-32b-0414-128k","v":"z-ai","i":0.1,"o":0.1,"d":""},{"k":"claude-haiku-5-5","n":"claude-haiku-5-5","v":"anthropic","i":0.1,"o":0.5,"d":"2026-10-07"},{"k":"text-embedding-3-large","n":"text-embedding-3-large","v":"openai","i":0.13,"o":0.0,"d":""},{"k":"dashscope/qwen3-next-80b-a3b-instruct","n":"qwen3-next-80b-a3b-instruct","v":"qwen","i":0.15,"o":1.2,"d":"2025-09-11"},{"k":"dashscope/qwen3-next-80b-a3b-thinking","n":"qwen3-next-80b-a3b-thinking","v":"qwen","i":0.15,"o":1.2,"d":"2025-09-11"},{"k":"dashscope/qwen3.8-flash","n":"qwen3.8-flash","v":"qwen","i":0.15,"o":0.47,"d":"2026-08-26"},{"k":"dashscope/qwen3.8-omni-flash","n":"qwen3.8-omni-flash","v":"qwen","i":0.15,"o":0.47,"d":"2026-09-21"},{"k":"gpt-4o-mini","n":"gpt-4o-mini","v":"openai","i":0.15,"o":0.6,"d":"2024-07-18"},{"k":"gpt-4o-mini-2024-07-18","n":"gpt-4o-mini-2024-07-18","v":"openai","i":0.15,"o":0.6,"d":"2024-07-18"},{"k":"gpt-4o-mini-audio-preview-2024-12-17","n":"gpt-4o-mini-audio-preview-2024-12-17","v":"openai","i":0.15,"o":0.6,"d":"2024-12-17"},{"k":"gpt-4o-mini-search-preview","n":"gpt-4o-mini-search-preview","v":"openai","i":0.15,"o":0.6,"d":""},{"k":"mistral/magistral-small-latest","n":"magistral-small-latest","v":"mistralai","i":0.15,"o":0.6,"d":""},{"k":"mistral/codestral-embed","n":"codestral-embed","v":"mistralai","i":0.15,"o":0.0,"d":""},{"k":"mistral/codestral-embed-2505","n":"codestral-embed-2505","v":"mistralai","i":0.15,"o":0.0,"d":""},{"k":"mistral/mistral-small-latest","n":"mistral-small-latest","v":"mistralai","i":0.15,"o":0.6,"d":""},{"k":"mistral/ministral-3-8b-2512","n":"ministral-3-8b-2512","v":"mistralai","i":0.15,"o":0.15,"d":""},{"k":"mistral/ministral-8b-2512","n":"ministral-8b-2512","v":"mistralai","i":0.15,"o":0.15,"d":"2025-12-02"},{"k":"mistral/ministral-8b-latest","n":"ministral-8b-latest","v":"mistralai","i":0.15,"o":0.15,"d":""},{"k":"zai/glm-5.3-flash","n":"glm-5.3-flash","v":"z-ai","i":0.15,"o":0.5,"d":"2026-08-26"},{"k":"mistral/mistral-small-2603","n":"mistral-small-2603","v":"mistralai","i":0.15,"o":0.6,"d":"2026-03-16"},{"k":"mistral/mistral-vibe-cli-fast","n":"mistral-vibe-cli-fast","v":"mistralai","i":0.15,"o":0.6,"d":""},{"k":"dashscope/qwen3-vl-32b-instruct","n":"qwen3-vl-32b-instruct","v":"qwen","i":0.16,"o":0.64,"d":""},{"k":"dashscope/qwen3-vl-32b-thinking","n":"qwen3-vl-32b-thinking","v":"qwen","i":0.16,"o":2.87,"d":""},{"k":"dashscope/deepseek-v4-flash","n":"deepseek-v4-flash","v":"qwen","i":0.2,"o":0.4,"d":"2026-08-01"},{"k":"dashscope/deepseek-v4-flash-0731","n":"deepseek-v4-flash-0731","v":"qwen","i":0.2,"o":0.4,"d":"2026-07-31"},{"k":"ft:gpt-4.1-nano-2025-04-14","n":"ft:gpt-4.1-nano-2025-04-14","v":"openai","i":0.2,"o":0.8,"d":"2025-04-14"},{"k":"gpt-5.6-luna","n":"gpt-5.6-luna","v":"openai","i":0.2,"o":1.2,"d":"2026-07-09"},{"k":"gpt-5.4-nano","n":"gpt-5.4-nano","v":"openai","i":0.2,"o":1.25,"d":"2026-03-17"},{"k":"gpt-5.4-nano-2026-03-17","n":"gpt-5.4-nano-2026-03-17","v":"openai","i":0.2,"o":1.25,"d":"2026-03-17"},{"k":"mistral/ministral-14b-2512","n":"ministral-14b-2512","v":"mistralai","i":0.2,"o":0.2,"d":"2025-12-02"},{"k":"mistral/ministral-14b-latest","n":"ministral-14b-latest","v":"mistralai","i":0.2,"o":0.2,"d":""},{"k":"mistral/ministral-3-14b-2512","n":"ministral-3-14b-2512","v":"mistralai","i":0.2,"o":0.2,"d":""},{"k":"moonshot/moonshot-v1-8k","n":"moonshot-v1-8k","v":"moonshotai","i":0.2,"o":2.0,"d":""},{"k":"moonshot/moonshot-v1-8k-vision-preview","n":"moonshot-v1-8k-vision-preview","v":"moonshotai","i":0.2,"o":2.0,"d":""},{"k":"zai/glm-4.5-air","n":"glm-4.5-air","v":"z-ai","i":0.2,"o":1.1,"d":"2025-07-25"},{"k":"gemini-3.1-flash-lite-image","n":"gemini-3.1-flash-lite-image","v":"google","i":0.25,"o":1.5,"d":"2026-06-30"},{"k":"gemini-3.1-flash-lite-preview","n":"gemini-3.1-flash-lite-preview","v":"google","i":0.25,"o":1.5,"d":"2026-05-07"},{"k":"gemini-3.1-flash-lite","n":"gemini-3.1-flash-lite","v":"google","i":0.25,"o":1.5,"d":"2026-05-07"},{"k":"gpt-5.1-codex-mini","n":"gpt-5.1-codex-mini","v":"openai","i":0.25,"o":2.0,"d":"2025-11-13"},{"k":"gpt-5-mini","n":"gpt-5-mini","v":"openai","i":0.25,"o":2.0,"d":"2025-08-07"},{"k":"gpt-5-mini-2025-08-07","n":"gpt-5-mini-2025-08-07","v":"openai","i":0.25,"o":2.0,"d":"2025-08-07"},{"k":"mistral/codestral-mamba-latest","n":"codestral-mamba-latest","v":"mistralai","i":0.25,"o":0.25,"d":""},{"k":"mistral/mistral-tiny","n":"mistral-tiny","v":"mistralai","i":0.25,"o":0.25,"d":""},{"k":"deepseek-chat","n":"deepseek-chat","v":"deepseek","i":0.28,"o":0.42,"d":"2024-12-26"},{"k":"deepseek-reasoner","n":"deepseek-reasoner","v":"deepseek","i":0.28,"o":0.42,"d":"2025-01-20"},{"k":"dashscope/qwen-coder","n":"qwen-coder","v":"qwen","i":0.3,"o":1.5,"d":"2024-09-19"},{"k":"ft:gpt-4o-mini-2024-07-18","n":"ft:gpt-4o-mini-2024-07-18","v":"openai","i":0.3,"o":1.2,"d":"2024-07-18"},{"k":"gemini-2.5-flash","n":"gemini-2.5-flash","v":"google","i":0.3,"o":2.5,"d":"2025-06-17"},{"k":"gemini-2.5-flash-image","n":"gemini-2.5-flash-image","v":"google","i":0.3,"o":2.5,"d":"2025-10-07"},{"k":"gemini-3.5-flash-lite","n":"gemini-3.5-flash-lite","v":"google","i":0.3,"o":2.5,"d":"2026-07-21"},{"k":"gemini-2.5-flash-preview-09-2025","n":"gemini-2.5-flash-preview-09-2025","v":"google","i":0.3,"o":2.5,"d":""},{"k":"gemini-robotics-er-1.5-preview","n":"gemini-robotics-er-1.5-preview","v":"google","i":0.3,"o":2.5,"d":""},{"k":"minimax/MiniMax-M2.1","n":"MiniMax-M2.1","v":"minimax","i":0.3,"o":1.2,"d":"2025-12-23"},{"k":"minimax/MiniMax-M2.1-lightning","n":"MiniMax-M2.1-lightning","v":"minimax","i":0.3,"o":2.4,"d":""},{"k":"minimax/MiniMax-M2.5","n":"MiniMax-M2.5","v":"minimax","i":0.3,"o":1.2,"d":"2026-02-12"},{"k":"minimax/MiniMax-M2.5-lightning","n":"MiniMax-M2.5-lightning","v":"minimax","i":0.3,"o":2.4,"d":""},{"k":"minimax/MiniMax-M2","n":"MiniMax-M2","v":"minimax","i":0.3,"o":1.2,"d":"2025-10-23"},{"k":"minimax/MiniMax-M3","n":"MiniMax-M3","v":"minimax","i":0.3,"o":1.2,"d":"2026-05-31"},{"k":"mistral/codestral-2508","n":"codestral-2508","v":"mistralai","i":0.3,"o":0.9,"d":"2025-08-01"},{"k":"mistral/codestral-latest","n":"codestral-latest","v":"mistralai","i":0.3,"o":0.9,"d":""},{"k":"mistral/open-mistral-nemo","n":"open-mistral-nemo","v":"mistralai","i":0.3,"o":0.3,"d":""},{"k":"gemini-flash-lite-latest","n":"gemini-flash-lite-latest","v":"google","i":0.3,"o":2.5,"d":""},{"k":"gemini-exp-1206","n":"gemini-exp-1206","v":"google","i":0.3,"o":2.5,"d":""},{"k":"deepseek-flash","n":"deepseek-flash","v":"deepseek","i":0.3,"o":1.2,"d":"2026-09-14"},{"k":"deepseek-v4-flash","n":"deepseek-v4-flash","v":"deepseek","i":0.3,"o":1.2,"d":"2026-08-01"},{"k":"deepseek-v4-flash-vision-exp","n":"deepseek-v4-flash-vision-exp","v":"deepseek","i":0.3,"o":1.2,"d":"2026-08-21"},{"k":"mistral/mistral-code-latest","n":"mistral-code-latest","v":"mistralai","i":0.3,"o":0.9,"d":""},{"k":"mistral/mistral-code-fim-latest","n":"mistral-code-fim-latest","v":"mistralai","i":0.3,"o":0.9,"d":""},{"k":"dashscope/qwen-plus","n":"qwen-plus","v":"qwen","i":0.4,"o":1.2,"d":"2025-02-01"},{"k":"dashscope/qwen-plus-2025-01-25","n":"qwen-plus-2025-01-25","v":"qwen","i":0.4,"o":1.2,"d":"2025-02-01"},{"k":"dashscope/qwen-plus-2025-04-28","n":"qwen-plus-2025-04-28","v":"qwen","i":0.4,"o":1.2,"d":"2025-02-01"},{"k":"dashscope/qwen-plus-2025-07-14","n":"qwen-plus-2025-07-14","v":"qwen","i":0.4,"o":1.2,"d":"2025-02-01"},{"k":"dashscope/qwen3-vl-235b-a22b-instruct","n":"qwen3-vl-235b-a22b-instruct","v":"qwen","i":0.4,"o":1.6,"d":"2025-09-23"},{"k":"dashscope/qwen3-vl-235b-a22b-thinking","n":"qwen3-vl-235b-a22b-thinking","v":"qwen","i":0.4,"o":4.0,"d":"2025-09-23"},{"k":"gpt-4.1-mini","n":"gpt-4.1-mini","v":"openai","i":0.4,"o":1.6,"d":"2025-04-14"},{"k":"gpt-4.1-mini-2025-04-14","n":"gpt-4.1-mini-2025-04-14","v":"openai","i":0.4,"o":1.6,"d":"2025-04-14"},{"k":"mistral/devstral-latest","n":"devstral-latest","v":"mistralai","i":0.4,"o":2.0,"d":""},{"k":"mistral/devstral-medium-latest","n":"devstral-medium-latest","v":"mistralai","i":0.4,"o":2.0,"d":""},{"k":"mistral/mistral-code-agent-latest","n":"mistral-code-agent-latest","v":"mistralai","i":0.4,"o":2.0,"d":""},{"k":"volcengine/doubao-seed-2-1-turbo-260628","n":"doubao-seed-2-1-turbo-260628","v":"bytedance-seed","i":0.4313,"o":2.1562,"d":""},{"k":"gemini-3.1-flash-image","n":"gemini-3.1-flash-image","v":"google","i":0.5,"o":3.0,"d":"2026-06-18"},{"k":"gemini-3.1-flash-image-preview","n":"gemini-3.1-flash-image-preview","v":"google","i":0.5,"o":3.0,"d":"2026-06-18"},{"k":"gemini-live-2.5-flash-native-audio","n":"gemini-live-2.5-flash-native-audio","v":"google","i":0.5,"o":2.0,"d":""},{"k":"gemini-live-2.5-flash-preview-native-audio-09-2025","n":"gemini-live-2.5-flash-preview-native-audio-09-2025","v":"google","i":0.5,"o":2.0,"d":""},{"k":"gemini-3-flash-preview","n":"gemini-3-flash-preview","v":"google","i":0.5,"o":3.0,"d":"2025-12-17"},{"k":"gpt-3.5-turbo","n":"gpt-3.5-turbo","v":"openai","i":0.5,"o":1.5,"d":"2023-09-28"},{"k":"gpt-3.5-turbo-0125","n":"gpt-3.5-turbo-0125","v":"openai","i":0.5,"o":1.5,"d":""},{"k":"mistral/mistral-large-latest","n":"mistral-large-latest","v":"mistralai","i":0.5,"o":1.5,"d":"2024-02-26"},{"k":"mistral/mistral-large-3","n":"mistral-large-3","v":"mistralai","i":0.5,"o":1.5,"d":""},{"k":"mistral/mistral-large-2512","n":"mistral-large-2512","v":"mistralai","i":0.5,"o":1.5,"d":"2025-12-01"},{"k":"gemini-2.5-flash-native-audio-latest","n":"gemini-2.5-flash-native-audio-latest","v":"google","i":0.5,"o":2.0,"d":""},{"k":"gemini-2.5-flash-native-audio-preview-09-2025","n":"gemini-2.5-flash-native-audio-preview-09-2025","v":"google","i":0.5,"o":2.0,"d":""},{"k":"gemini-2.5-flash-native-audio-preview-12-2025","n":"gemini-2.5-flash-native-audio-preview-12-2025","v":"google","i":0.5,"o":2.0,"d":""},{"k":"gemini-2.5-flash-preview-tts","n":"gemini-2.5-flash-preview-tts","v":"google","i":0.5,"o":10.0,"d":""},{"k":"gpt-audio-mini","n":"gpt-audio-mini","v":"openai","i":0.6,"o":2.4,"d":"2026-01-19"},{"k":"gpt-audio-mini-2025-12-15","n":"gpt-audio-mini-2025-12-15","v":"openai","i":0.6,"o":2.4,"d":"2026-01-19"},{"k":"gpt-4o-mini-realtime-preview-2024-12-17","n":"gpt-4o-mini-realtime-preview-2024-12-17","v":"openai","i":0.6,"o":2.4,"d":"2024-12-17"},{"k":"gpt-4o-mini-tts","n":"gpt-4o-mini-tts","v":"openai","i":0.6,"o":10.0,"d":""},{"k":"gpt-4o-mini-tts-2025-03-20","n":"gpt-4o-mini-tts-2025-03-20","v":"openai","i":0.6,"o":10.0,"d":"2025-03-20"},{"k":"gpt-realtime-2.1-mini","n":"gpt-realtime-2.1-mini","v":"openai","i":0.6,"o":2.4,"d":""},{"k":"gpt-realtime-mini","n":"gpt-realtime-mini","v":"openai","i":0.6,"o":2.4,"d":""},{"k":"moonshot/kimi-k2.5","n":"kimi-k2.5","v":"moonshotai","i":0.6,"o":3.0,"d":"2026-01-27"},{"k":"zai/glm-4.7","n":"glm-4.7","v":"z-ai","i":0.6,"o":2.2,"d":"2025-12-22"},{"k":"zai/glm-4.6","n":"glm-4.6","v":"z-ai","i":0.6,"o":2.2,"d":"2025-09-30"},{"k":"zai/glm-4.5","n":"glm-4.5","v":"z-ai","i":0.6,"o":2.2,"d":"2025-07-25"},{"k":"zai/glm-4.5v","n":"glm-4.5v","v":"z-ai","i":0.6,"o":1.8,"d":"2025-08-11"},{"k":"gpt-4o-mini-tts-2025-12-15","n":"gpt-4o-mini-tts-2025-12-15","v":"openai","i":0.6,"o":10.0,"d":"2025-12-15"},{"k":"gpt-realtime-mini-2025-12-15","n":"gpt-realtime-mini-2025-12-15","v":"openai","i":0.6,"o":2.4,"d":"2025-12-15"},{"k":"mistral/mistral-large-4","n":"mistral-large-4","v":"mistralai","i":0.68,"o":2.09,"d":""},{"k":"mistral/mistral-large-4-0","n":"mistral-large-4-0","v":"mistralai","i":0.68,"o":2.09,"d":"2026-10-06"},{"k":"gemini-3.6-flash","n":"gemini-3.6-flash","v":"google","i":0.75,"o":3.75,"d":"2026-07-21"},{"k":"gemini-3.7-flash","n":"gemini-3.7-flash","v":"google","i":0.75,"o":3.75,"d":"2026-08-13"},{"k":"gemini-3.8-flash","n":"gemini-3.8-flash","v":"google","i":0.75,"o":3.75,"d":"2026-09-02"},{"k":"gpt-5.4-mini","n":"gpt-5.4-mini","v":"openai","i":0.75,"o":4.5,"d":"2026-03-17"},{"k":"gpt-5.4-mini-2026-03-17","n":"gpt-5.4-mini-2026-03-17","v":"openai","i":0.75,"o":4.5,"d":"2026-03-17"},{"k":"gemini-3.1-flash-live-preview","n":"gemini-3.1-flash-live-preview","v":"google","i":0.75,"o":4.5,"d":""},{"k":"gemini-3.8-live","n":"gemini-3.8-live","v":"google","i":0.75,"o":4.5,"d":""},{"k":"gemini-3.8-live-extended-thinking","n":"gemini-3.8-live-extended-thinking","v":"google","i":0.75,"o":4.5,"d":""},{"k":"gemini-flash-latest","n":"gemini-flash-latest","v":"google","i":0.75,"o":3.75,"d":"2026-04-27"},{"k":"dashscope/qwq-plus","n":"qwq-plus","v":"qwen","i":0.8,"o":2.4,"d":""},{"k":"ft:gpt-4.1-mini-2025-04-14","n":"ft:gpt-4.1-mini-2025-04-14","v":"openai","i":0.8,"o":3.2,"d":"2025-04-14"},{"k":"volcengine/doubao-seed-2-1-pro-260628","n":"doubao-seed-2-1-pro-260628","v":"bytedance-seed","i":0.8625,"o":4.3125,"d":""},{"k":"dashscope/kimi-k2.7-code","n":"kimi-k2.7-code","v":"qwen","i":0.95,"o":4.0,"d":"2026-06-12"},{"k":"moonshot/kimi-k2.7-code","n":"kimi-k2.7-code","v":"moonshotai","i":0.95,"o":4.0,"d":"2026-06-12"},{"k":"moonshot/kimi-k2.6","n":"kimi-k2.6","v":"moonshotai","i":0.95,"o":4.0,"d":"2026-04-20"},{"k":"claude-haiku-4-5-20251001","n":"claude-haiku-4-5-20251001","v":"anthropic","i":1.0,"o":5.0,"d":"2025-10-01"},{"k":"claude-haiku-4-5","n":"claude-haiku-4-5","v":"anthropic","i":1.0,"o":5.0,"d":"2025-10-15"},{"k":"gemini-2.5-pro-preview-tts","n":"gemini-2.5-pro-preview-tts","v":"google","i":1.0,"o":20.0,"d":""},{"k":"gpt-3.5-turbo-1106","n":"gpt-3.5-turbo-1106","v":"openai","i":1.0,"o":2.0,"d":""},{"k":"moonshot/moonshot-v1-32k","n":"moonshot-v1-32k","v":"moonshotai","i":1.0,"o":3.0,"d":""},{"k":"moonshot/moonshot-v1-32k-vision-preview","n":"moonshot-v1-32k-vision-preview","v":"moonshotai","i":1.0,"o":3.0,"d":""},{"k":"zai/glm-5","n":"glm-5","v":"z-ai","i":1.0,"o":3.2,"d":"2026-02-11"},{"k":"xai/grok-build-0.1","n":"grok-build-0.1","v":"x-ai","i":1.0,"o":2.0,"d":"2026-05-20"},{"k":"xai/grok-code-fast","n":"grok-code-fast","v":"x-ai","i":1.0,"o":2.0,"d":""},{"k":"xai/grok-code-fast-1","n":"grok-code-fast-1","v":"x-ai","i":1.0,"o":2.0,"d":""},{"k":"xai/grok-code-fast-1-0825","n":"grok-code-fast-1-0825","v":"x-ai","i":1.0,"o":2.0,"d":""},{"k":"o3-mini","n":"o3-mini","v":"openai","i":1.1,"o":4.4,"d":"2025-01-31"},{"k":"o3-mini-2025-01-31","n":"o3-mini-2025-01-31","v":"openai","i":1.1,"o":4.4,"d":"2025-01-31"},{"k":"o4-mini","n":"o4-mini","v":"openai","i":1.1,"o":4.4,"d":"2025-04-16"},{"k":"o4-mini-2025-04-16","n":"o4-mini-2025-04-16","v":"openai","i":1.1,"o":4.4,"d":"2025-04-16"},{"k":"zai/glm-4.5-airx","n":"glm-4.5-airx","v":"z-ai","i":1.1,"o":4.5,"d":""},{"k":"zai/glm-5-code","n":"glm-5-code","v":"z-ai","i":1.2,"o":5.0,"d":""},{"k":"gemini-2.5-pro","n":"gemini-2.5-pro","v":"google","i":1.25,"o":10.0,"d":"2025-06-17"},{"k":"gemini-2.5-computer-use-preview-10-2025","n":"gemini-2.5-computer-use-preview-10-2025","v":"google","i":1.25,"o":10.0,"d":""},{"k":"gpt-4o-mini-transcribe","n":"gpt-4o-mini-transcribe","v":"openai","i":1.25,"o":5.0,"d":""},{"k":"gpt-5","n":"gpt-5","v":"openai","i":1.25,"o":10.0,"d":"2025-08-07"},{"k":"gpt-5-codex","n":"gpt-5-codex","v":"openai","i":1.25,"o":10.0,"d":""},{"k":"gpt-5.1","n":"gpt-5.1","v":"openai","i":1.25,"o":10.0,"d":"2025-11-13"},{"k":"gpt-5.1-codex-max","n":"gpt-5.1-codex-max","v":"openai","i":1.25,"o":10.0,"d":"2025-12-04"},{"k":"gpt-5.1-codex","n":"gpt-5.1-codex","v":"openai","i":1.25,"o":10.0,"d":"2025-11-13"},{"k":"gpt-5.1-chat-latest","n":"gpt-5.1-chat-latest","v":"openai","i":1.25,"o":10.0,"d":""},{"k":"gpt-5.1-2025-11-13","n":"gpt-5.1-2025-11-13","v":"openai","i":1.25,"o":10.0,"d":"2025-11-13"},{"k":"gpt-5-2025-08-07","n":"gpt-5-2025-08-07","v":"openai","i":1.25,"o":10.0,"d":"2025-08-07"},{"k":"gpt-5-chat","n":"gpt-5-chat","v":"openai","i":1.25,"o":10.0,"d":"2025-08-07"},{"k":"gpt-5-chat-latest","n":"gpt-5-chat-latest","v":"openai","i":1.25,"o":10.0,"d":""},{"k":"xai/grok-4.20-multi-agent-beta-0309","n":"grok-4.20-multi-agent-beta-0309","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-beta-0309-reasoning","n":"grok-4.20-beta-0309-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-0309-reasoning","n":"grok-4.20-0309-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-beta-0309-non-reasoning","n":"grok-4.20-beta-0309-non-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.3","n":"grok-4.3","v":"x-ai","i":1.25,"o":2.5,"d":"2026-04-30"},{"k":"xai/grok-4.3-latest","n":"grok-4.3-latest","v":"x-ai","i":1.25,"o":2.5,"d":"2026-04-30"},{"k":"gpt-4o-mini-transcribe-2025-03-20","n":"gpt-4o-mini-transcribe-2025-03-20","v":"openai","i":1.25,"o":5.0,"d":"2025-03-20"},{"k":"gpt-4o-mini-transcribe-2025-12-15","n":"gpt-4o-mini-transcribe-2025-12-15","v":"openai","i":1.25,"o":5.0,"d":"2025-12-15"},{"k":"gpt-5-search-api","n":"gpt-5-search-api","v":"openai","i":1.25,"o":10.0,"d":""},{"k":"gpt-5-search-api-2025-10-14","n":"gpt-5-search-api-2025-10-14","v":"openai","i":1.25,"o":10.0,"d":"2025-10-14"},{"k":"xai/grok-4.20-0309-non-reasoning","n":"grok-4.20-0309-non-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-multi-agent-0309","n":"grok-4.20-multi-agent-0309","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20","n":"grok-4.20","v":"x-ai","i":1.25,"o":2.5,"d":"2026-03-31"},{"k":"xai/grok-4.20-reasoning","n":"grok-4.20-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-reasoning-latest","n":"grok-4.20-reasoning-latest","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-non-reasoning","n":"grok-4.20-non-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-non-reasoning-latest","n":"grok-4.20-non-reasoning-latest","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-multi-agent","n":"grok-4.20-multi-agent","v":"x-ai","i":1.25,"o":2.5,"d":"2026-03-31"},{"k":"xai/grok-4.20-multi-agent-latest","n":"grok-4.20-multi-agent-latest","v":"x-ai","i":1.25,"o":2.5,"d":"2026-03-31"},{"k":"xai/grok-4.20-0309","n":"grok-4.20-0309","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-beta","n":"grok-4.20-beta","v":"x-ai","i":1.25,"o":2.5,"d":"2026-03-31"},{"k":"xai/grok-4.20-beta-0309","n":"grok-4.20-beta-0309","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-beta-latest","n":"grok-4.20-beta-latest","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-beta-latest-non-reasoning","n":"grok-4.20-beta-latest-non-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-beta-latest-reasoning","n":"grok-4.20-beta-latest-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-beta-non-reasoning","n":"grok-4.20-beta-non-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-beta-reasoning","n":"grok-4.20-beta-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-experimental-beta-0304","n":"grok-4.20-experimental-beta-0304","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-experimental-beta-0304-non-reasoning","n":"grok-4.20-experimental-beta-0304-non-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-experimental-beta-0304-reasoning","n":"grok-4.20-experimental-beta-0304-reasoning","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-experimental-beta-latest","n":"grok-4.20-experimental-beta-latest","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-experimental-beta-non-reasoning-latest","n":"grok-4.20-experimental-beta-non-reasoning-latest","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-experimental-beta-reasoning-latest","n":"grok-4.20-experimental-beta-reasoning-latest","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-multi-agent-beta-latest","n":"grok-4.20-multi-agent-beta-latest","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-multi-agent-experimental-beta-0304","n":"grok-4.20-multi-agent-experimental-beta-0304","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-multi-agent-experimental-beta-latest","n":"grok-4.20-multi-agent-experimental-beta-latest","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-non-reasoning-gv2","n":"grok-4.20-non-reasoning-gv2","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"xai/grok-4.20-reasoning-gv2","n":"grok-4.20-reasoning-gv2","v":"x-ai","i":1.25,"o":2.5,"d":""},{"k":"deepseek-v4-pro","n":"deepseek-v4-pro","v":"deepseek","i":1.32,"o":3.96,"d":"2026-04-24"},{"k":"dashscope/glm-5.1","n":"glm-5.1","v":"qwen","i":1.4,"o":4.4,"d":"2026-04-07"},{"k":"dashscope/glm-5.2","n":"glm-5.2","v":"qwen","i":1.4,"o":4.4,"d":"2026-06-16"},{"k":"mistral/zai-glm-5-2","n":"zai-glm-5-2","v":"mistralai","i":1.4,"o":4.4,"d":"2026-06-16"},{"k":"mistral/zai-glm-5-3","n":"zai-glm-5-3","v":"mistralai","i":1.4,"o":4.4,"d":"2026-08-18"},{"k":"mistral/zai-glm-5","n":"zai-glm-5","v":"mistralai","i":1.4,"o":4.4,"d":"2026-02-11"},{"k":"mistral/zai-glm-latest","n":"zai-glm-latest","v":"mistralai","i":1.4,"o":4.4,"d":"2026-08-19"},{"k":"mistral/glm-5-2","n":"glm-5-2","v":"mistralai","i":1.4,"o":4.4,"d":"2026-06-16"},{"k":"zai/glm-5.3","n":"glm-5.3","v":"z-ai","i":1.4,"o":4.4,"d":"2026-08-18"},{"k":"zai/glm-5.1","n":"glm-5.1","v":"z-ai","i":1.4,"o":4.4,"d":"2026-04-07"},{"k":"zai/glm-5.2","n":"glm-5.2","v":"z-ai","i":1.4,"o":4.4,"d":"2026-06-16"},{"k":"gemini-omni-flash-preview","n":"gemini-omni-flash-preview","v":"google","i":1.5,"o":9.0,"d":""},{"k":"gemini-3.5-flash","n":"gemini-3.5-flash","v":"google","i":1.5,"o":9.0,"d":"2026-05-19"},{"k":"gemini-3.8-flash-cyber","n":"gemini-3.8-flash-cyber","v":"google","i":1.5,"o":7.5,"d":""},{"k":"mistral/mistral-medium-3","n":"mistral-medium-3","v":"mistralai","i":1.5,"o":7.5,"d":"2025-05-07"},{"k":"mistral/magistral-medium-latest","n":"magistral-medium-latest","v":"mistralai","i":1.5,"o":7.5,"d":""},{"k":"mistral/mistral-medium","n":"mistral-medium","v":"mistralai","i":1.5,"o":7.5,"d":""},{"k":"mistral/mistral-medium-2604","n":"mistral-medium-2604","v":"mistralai","i":1.5,"o":7.5,"d":""},{"k":"mistral/mistral-medium-latest","n":"mistral-medium-latest","v":"mistralai","i":1.5,"o":7.5,"d":""},{"k":"mistral/mistral-medium-3-5","n":"mistral-medium-3-5","v":"mistralai","i":1.5,"o":7.5,"d":"2026-04-30"},{"k":"mistral/mistral-medium-3.5","n":"mistral-medium-3.5","v":"mistralai","i":1.5,"o":7.5,"d":"2026-04-30"},{"k":"mistral/mistral-vibe-cli-latest","n":"mistral-vibe-cli-latest","v":"mistralai","i":1.5,"o":7.5,"d":""},{"k":"mistral/mistral-vibe-cli-with-tools","n":"mistral-vibe-cli-with-tools","v":"mistralai","i":1.5,"o":7.5,"d":""},{"k":"gemini-nano-banana-2.1","n":"gemini-nano-banana-2.1","v":"google","i":1.5,"o":7.5,"d":"2026-10-06"},{"k":"dashscope/qwen-max","n":"qwen-max","v":"qwen","i":1.6,"o":6.4,"d":"2024-09-19"},{"k":"gpt-5.2","n":"gpt-5.2","v":"openai","i":1.75,"o":14.0,"d":"2025-12-10"},{"k":"gpt-5.2-codex","n":"gpt-5.2-codex","v":"openai","i":1.75,"o":14.0,"d":"2026-01-14"},{"k":"gpt-5.2-chat-latest","n":"gpt-5.2-chat-latest","v":"openai","i":1.75,"o":14.0,"d":""},{"k":"gpt-5.2-2025-12-11","n":"gpt-5.2-2025-12-11","v":"openai","i":1.75,"o":14.0,"d":"2025-12-10"},{"k":"gpt-5.3-codex","n":"gpt-5.3-codex","v":"openai","i":1.75,"o":14.0,"d":"2026-02-24"},{"k":"gpt-5.3-chat-latest","n":"gpt-5.3-chat-latest","v":"openai","i":1.75,"o":14.0,"d":""},{"k":"claude-sonnet-5","n":"claude-sonnet-5","v":"anthropic","i":2.0,"o":10.0,"d":"2026-06-30"},{"k":"claude-sonnet-5-5","n":"claude-sonnet-5-5","v":"anthropic","i":2.0,"o":10.0,"d":"2026-09-28"},{"k":"dashscope/qwen3.8-max","n":"qwen3.8-max","v":"qwen","i":2.0,"o":6.0,"d":""},{"k":"gemini-3-pro-image","n":"gemini-3-pro-image","v":"google","i":2.0,"o":12.0,"d":"2026-06-18"},{"k":"gemini-3-pro-image-preview","n":"gemini-3-pro-image-preview","v":"google","i":2.0,"o":12.0,"d":"2026-06-18"},{"k":"deep-research-pro-preview-12-2025","n":"deep-research-pro-preview-12-2025","v":"google","i":2.0,"o":12.0,"d":""},{"k":"gemini-3.1-pro-preview","n":"gemini-3.1-pro-preview","v":"google","i":2.0,"o":12.0,"d":"2026-02-19"},{"k":"gemini-3.1-pro-preview-customtools","n":"gemini-3.1-pro-preview-customtools","v":"google","i":2.0,"o":12.0,"d":"2026-02-25"},{"k":"gpt-4.1","n":"gpt-4.1","v":"openai","i":2.0,"o":8.0,"d":"2025-04-14"},{"k":"gpt-4.1-2025-04-14","n":"gpt-4.1-2025-04-14","v":"openai","i":2.0,"o":8.0,"d":"2025-04-14"},{"k":"gpt-6-sol","n":"gpt-6-sol","v":"openai","i":2.0,"o":10.0,"d":"2026-09-22"},{"k":"gpt-5.6-terra","n":"gpt-5.6-terra","v":"openai","i":2.0,"o":12.0,"d":"2026-07-09"},{"k":"gpt-image-1-mini","n":"gpt-image-1-mini","v":"openai","i":2.0,"o":0.0,"d":""},{"k":"mistral/pixtral-large-latest","n":"pixtral-large-latest","v":"mistralai","i":2.0,"o":6.0,"d":""},{"k":"moonshot/moonshot-v1-128k","n":"moonshot-v1-128k","v":"moonshotai","i":2.0,"o":5.0,"d":""},{"k":"moonshot/moonshot-v1-128k-vision-preview","n":"moonshot-v1-128k-vision-preview","v":"moonshotai","i":2.0,"o":5.0,"d":""},{"k":"moonshot/moonshot-v1-auto","n":"moonshot-v1-auto","v":"moonshotai","i":2.0,"o":5.0,"d":""},{"k":"o3","n":"o3","v":"openai","i":2.0,"o":8.0,"d":"2025-04-16"},{"k":"o3-2025-04-16","n":"o3-2025-04-16","v":"openai","i":2.0,"o":8.0,"d":"2025-04-16"},{"k":"o4-mini-deep-research","n":"o4-mini-deep-research","v":"openai","i":2.0,"o":8.0,"d":""},{"k":"xai/grok-4.5","n":"grok-4.5","v":"x-ai","i":2.0,"o":6.0,"d":"2026-07-08"},{"k":"xai/grok-4.5-latest","n":"grok-4.5-latest","v":"x-ai","i":2.0,"o":6.0,"d":"2026-07-08"},{"k":"xai/grok-build-latest","n":"grok-build-latest","v":"x-ai","i":2.0,"o":6.0,"d":""},{"k":"xai/grok-4.6","n":"grok-4.6","v":"x-ai","i":2.0,"o":6.0,"d":"2026-08-12"},{"k":"xai/grok-4.7","n":"grok-4.7","v":"x-ai","i":2.0,"o":6.0,"d":"2026-09-21"},{"k":"gemini-pro-latest","n":"gemini-pro-latest","v":"google","i":2.0,"o":12.0,"d":"2026-04-27"},{"k":"gpt-6.1-sol","n":"gpt-6.1-sol","v":"openai","i":2.0,"o":10.0,"d":"2026-09-29"},{"k":"zai/glm-4.5-x","n":"glm-4.5-x","v":"z-ai","i":2.2,"o":8.9,"d":""},{"k":"dashscope/deepseek-v4-pro","n":"deepseek-v4-pro","v":"qwen","i":2.4,"o":4.8,"d":"2026-04-24"},{"k":"gpt-4o-transcribe-diarize","n":"gpt-4o-transcribe-diarize","v":"openai","i":2.5,"o":10.0,"d":""},{"k":"dashscope/qwen3.7-max","n":"qwen3.7-max","v":"qwen","i":2.5,"o":7.5,"d":"2026-05-21"},{"k":"gpt-4o","n":"gpt-4o","v":"openai","i":2.5,"o":10.0,"d":"2024-11-20"},{"k":"gpt-4o-2024-08-06","n":"gpt-4o-2024-08-06","v":"openai","i":2.5,"o":10.0,"d":"2024-11-20"},{"k":"gpt-4o-2024-11-20","n":"gpt-4o-2024-11-20","v":"openai","i":2.5,"o":10.0,"d":"2024-11-20"},{"k":"gpt-4o-audio-preview-2024-12-17","n":"gpt-4o-audio-preview-2024-12-17","v":"openai","i":2.5,"o":10.0,"d":"2024-12-17"},{"k":"gpt-4o-audio-preview-2025-06-03","n":"gpt-4o-audio-preview-2025-06-03","v":"openai","i":2.5,"o":10.0,"d":"2025-06-03"},{"k":"gpt-audio","n":"gpt-audio","v":"openai","i":2.5,"o":10.0,"d":"2026-01-19"},{"k":"gpt-audio-1.5","n":"gpt-audio-1.5","v":"openai","i":2.5,"o":10.0,"d":""},{"k":"gpt-audio-2025-08-28","n":"gpt-audio-2025-08-28","v":"openai","i":2.5,"o":10.0,"d":"2026-01-19"},{"k":"gpt-4o-search-preview","n":"gpt-4o-search-preview","v":"openai","i":2.5,"o":10.0,"d":""},{"k":"gpt-4o-transcribe","n":"gpt-4o-transcribe","v":"openai","i":2.5,"o":10.0,"d":""},{"k":"gpt-5.4","n":"gpt-5.4","v":"openai","i":2.5,"o":15.0,"d":"2026-03-05"},{"k":"gpt-5.4-2026-03-05","n":"gpt-5.4-2026-03-05","v":"openai","i":2.5,"o":15.0,"d":"2026-03-05"},{"k":"claude-sonnet-4-5","n":"claude-sonnet-4-5","v":"anthropic","i":3.0,"o":15.0,"d":"2025-09-29"},{"k":"claude-sonnet-4-5-20250929","n":"claude-sonnet-4-5-20250929","v":"anthropic","i":3.0,"o":15.0,"d":"2025-09-29"},{"k":"claude-sonnet-4-6","n":"claude-sonnet-4-6","v":"anthropic","i":3.0,"o":15.0,"d":"2026-02-17"},{"k":"computer-use-preview","n":"computer-use-preview","v":"openai","i":3.0,"o":12.0,"d":""},{"k":"ft:gpt-3.5-turbo","n":"ft:gpt-3.5-turbo","v":"openai","i":3.0,"o":6.0,"d":""},{"k":"ft:gpt-3.5-turbo-0125","n":"ft:gpt-3.5-turbo-0125","v":"openai","i":3.0,"o":6.0,"d":""},{"k":"ft:gpt-3.5-turbo-0613","n":"ft:gpt-3.5-turbo-0613","v":"openai","i":3.0,"o":6.0,"d":""},{"k":"ft:gpt-3.5-turbo-1106","n":"ft:gpt-3.5-turbo-1106","v":"openai","i":3.0,"o":6.0,"d":""},{"k":"ft:gpt-4.1-2025-04-14","n":"ft:gpt-4.1-2025-04-14","v":"openai","i":3.0,"o":12.0,"d":"2025-04-14"},{"k":"gpt-3.5-turbo-16k","n":"gpt-3.5-turbo-16k","v":"openai","i":3.0,"o":4.0,"d":"2023-08-28"},{"k":"moonshot/kimi-k3","n":"kimi-k3","v":"moonshotai","i":3.0,"o":15.0,"d":"2026-07-16"},{"k":"ft:gpt-4o-2024-08-06","n":"ft:gpt-4o-2024-08-06","v":"openai","i":3.75,"o":15.0,"d":"2024-08-06"},{"k":"ft:gpt-4o-2024-11-20","n":"ft:gpt-4o-2024-11-20","v":"openai","i":3.75,"o":15.0,"d":"2024-11-20"},{"k":"claude-opus-5-5","n":"claude-opus-5-5","v":"anthropic","i":4.0,"o":20.0,"d":"2026-09-22"},{"k":"ft:o4-mini-2025-04-16","n":"ft:o4-mini-2025-04-16","v":"openai","i":4.0,"o":16.0,"d":"2025-04-16"},{"k":"gpt-5.6","n":"gpt-5.6","v":"openai","i":4.0,"o":20.0,"d":""},{"k":"gpt-5.6-sol","n":"gpt-5.6-sol","v":"openai","i":4.0,"o":20.0,"d":"2026-07-09"},{"k":"daybreak-blue-latest","n":"daybreak-blue-latest","v":"openai","i":4.0,"o":20.0,"d":""},{"k":"gpt-daybreak-blue-latest","n":"gpt-daybreak-blue-latest","v":"openai","i":4.0,"o":20.0,"d":""},{"k":"gpt-realtime","n":"gpt-realtime","v":"openai","i":4.0,"o":16.0,"d":""},{"k":"gpt-realtime-1.5","n":"gpt-realtime-1.5","v":"openai","i":4.0,"o":16.0,"d":""},{"k":"gpt-realtime-2","n":"gpt-realtime-2","v":"openai","i":4.0,"o":24.0,"d":""},{"k":"gpt-realtime-2.1","n":"gpt-realtime-2.1","v":"openai","i":4.0,"o":24.0,"d":""},{"k":"gpt-realtime-2025-08-28","n":"gpt-realtime-2025-08-28","v":"openai","i":4.0,"o":16.0,"d":"2025-08-28"},{"k":"claude-opus-4-5-20251101","n":"claude-opus-4-5-20251101","v":"anthropic","i":5.0,"o":25.0,"d":"2025-11-01"},{"k":"claude-opus-4-5","n":"claude-opus-4-5","v":"anthropic","i":5.0,"o":25.0,"d":"2025-11-24"},{"k":"claude-opus-4-6","n":"claude-opus-4-6","v":"anthropic","i":5.0,"o":25.0,"d":"2026-02-04"},{"k":"claude-opus-4-6-20260205","n":"claude-opus-4-6-20260205","v":"anthropic","i":5.0,"o":25.0,"d":"2026-02-05"},{"k":"claude-opus-4-7","n":"claude-opus-4-7","v":"anthropic","i":5.0,"o":25.0,"d":"2026-04-16"},{"k":"claude-opus-4-7-20260416","n":"claude-opus-4-7-20260416","v":"anthropic","i":5.0,"o":25.0,"d":"2026-04-16"},{"k":"claude-opus-5","n":"claude-opus-5","v":"anthropic","i":5.0,"o":25.0,"d":"2026-07-24"},{"k":"claude-opus-4-8","n":"claude-opus-4-8","v":"anthropic","i":5.0,"o":25.0,"d":"2026-05-27"},{"k":"gpt-4o-2024-05-13","n":"gpt-4o-2024-05-13","v":"openai","i":5.0,"o":15.0,"d":"2024-11-20"},{"k":"gpt-image-1.5","n":"gpt-image-1.5","v":"openai","i":5.0,"o":10.0,"d":""},{"k":"gpt-image-1.5-2025-12-16","n":"gpt-image-1.5-2025-12-16","v":"openai","i":5.0,"o":10.0,"d":"2025-12-16"},{"k":"gpt-image-2","n":"gpt-image-2","v":"openai","i":5.0,"o":0.0,"d":""},{"k":"gpt-image-2-2026-04-21","n":"gpt-image-2-2026-04-21","v":"openai","i":5.0,"o":0.0,"d":"2026-04-21"},{"k":"gpt-image-2.5-flare","n":"gpt-image-2.5-flare","v":"openai","i":5.0,"o":0.0,"d":""},{"k":"gpt-image-2.5-flare-2026-09-08","n":"gpt-image-2.5-flare-2026-09-08","v":"openai","i":5.0,"o":0.0,"d":"2026-09-08"},{"k":"gpt-image-2.5-sunburst","n":"gpt-image-2.5-sunburst","v":"openai","i":5.0,"o":0.0,"d":""},{"k":"gpt-image-2.5-sunburst-2026-09-08","n":"gpt-image-2.5-sunburst-2026-09-08","v":"openai","i":5.0,"o":0.0,"d":"2026-09-08"},{"k":"chat-latest","n":"chat-latest","v":"openai","i":5.0,"o":30.0,"d":""},{"k":"gpt-5.5","n":"gpt-5.5","v":"openai","i":5.0,"o":30.0,"d":"2026-04-24"},{"k":"gpt-5.5-2026-04-23","n":"gpt-5.5-2026-04-23","v":"openai","i":5.0,"o":30.0,"d":"2026-04-24"},{"k":"gpt-image-1","n":"gpt-image-1","v":"openai","i":5.0,"o":0.0,"d":""},{"k":"chatgpt-image-latest","n":"chatgpt-image-latest","v":"openai","i":5.0,"o":10.0,"d":""},{"k":"gpt-rosalind-research","n":"gpt-rosalind-research","v":"openai","i":5.0,"o":25.0,"d":""},{"k":"gpt-rosalind-discovery","n":"gpt-rosalind-discovery","v":"openai","i":5.0,"o":25.0,"d":""},{"k":"claude-fable-5","n":"claude-fable-5","v":"anthropic","i":10.0,"o":50.0,"d":"2026-06-09"},{"k":"claude-fable-5-1","n":"claude-fable-5-1","v":"anthropic","i":10.0,"o":50.0,"d":"2026-09-01"},{"k":"gpt-4-1106-preview","n":"gpt-4-1106-preview","v":"openai","i":10.0,"o":30.0,"d":""},{"k":"gpt-4-turbo","n":"gpt-4-turbo","v":"openai","i":10.0,"o":30.0,"d":"2024-04-09"},{"k":"gpt-4-turbo-2024-04-09","n":"gpt-4-turbo-2024-04-09","v":"openai","i":10.0,"o":30.0,"d":"2024-04-09"},{"k":"gpt-6-astra","n":"gpt-6-astra","v":"openai","i":10.0,"o":50.0,"d":"2026-09-04"},{"k":"o3-deep-research","n":"o3-deep-research","v":"openai","i":10.0,"o":40.0,"d":""},{"k":"claude-mythos-5","n":"claude-mythos-5","v":"anthropic","i":10.0,"o":50.0,"d":""},{"k":"claude-mythos-5-1","n":"claude-mythos-5-1","v":"anthropic","i":10.0,"o":50.0,"d":""},{"k":"claude-mythos-preview","n":"claude-mythos-preview","v":"anthropic","i":10.0,"o":50.0,"d":""},{"k":"gpt-5.6-cyber","n":"gpt-5.6-cyber","v":"openai","i":12.5,"o":75.0,"d":""},{"k":"daybreak-red-latest","n":"daybreak-red-latest","v":"openai","i":12.5,"o":75.0,"d":""},{"k":"gpt-daybreak-red-latest","n":"gpt-daybreak-red-latest","v":"openai","i":12.5,"o":75.0,"d":""},{"k":"gpt-5.5-cyber","n":"gpt-5.5-cyber","v":"openai","i":12.5,"o":75.0,"d":""},{"k":"gpt-5-pro","n":"gpt-5-pro","v":"openai","i":15.0,"o":120.0,"d":"2025-10-06"},{"k":"gpt-5-pro-2025-10-06","n":"gpt-5-pro-2025-10-06","v":"openai","i":15.0,"o":120.0,"d":"2025-10-06"},{"k":"o1","n":"o1","v":"openai","i":15.0,"o":60.0,"d":"2024-12-17"},{"k":"o1-2024-12-17","n":"o1-2024-12-17","v":"openai","i":15.0,"o":60.0,"d":"2024-12-17"},{"k":"o3-pro","n":"o3-pro","v":"openai","i":20.0,"o":80.0,"d":"2025-06-10"},{"k":"o3-pro-2025-06-10","n":"o3-pro-2025-06-10","v":"openai","i":20.0,"o":80.0,"d":"2025-06-10"},{"k":"gpt-5.2-pro","n":"gpt-5.2-pro","v":"openai","i":21.0,"o":168.0,"d":"2025-12-10"},{"k":"gpt-5.2-pro-2025-12-11","n":"gpt-5.2-pro-2025-12-11","v":"openai","i":21.0,"o":168.0,"d":"2025-12-10"},{"k":"ft:gpt-4-0613","n":"ft:gpt-4-0613","v":"openai","i":30.0,"o":60.0,"d":""},{"k":"gpt-4","n":"gpt-4","v":"openai","i":30.0,"o":60.0,"d":"2023-05-28"},{"k":"gpt-4-0613","n":"gpt-4-0613","v":"openai","i":30.0,"o":60.0,"d":""},{"k":"gpt-5.5-pro","n":"gpt-5.5-pro","v":"openai","i":30.0,"o":180.0,"d":"2026-04-24"},{"k":"gpt-5.5-pro-2026-04-23","n":"gpt-5.5-pro-2026-04-23","v":"openai","i":30.0,"o":180.0,"d":"2026-04-24"},{"k":"gpt-5.4-pro","n":"gpt-5.4-pro","v":"openai","i":30.0,"o":180.0,"d":"2026-03-05"},{"k":"gpt-5.4-pro-2026-03-05","n":"gpt-5.4-pro-2026-03-05","v":"openai","i":30.0,"o":180.0,"d":"2026-03-05"},{"k":"o1-pro","n":"o1-pro","v":"openai","i":150.0,"o":600.0,"d":"2025-03-19"},{"k":"o1-pro-2025-03-19","n":"o1-pro-2025-03-19","v":"openai","i":150.0,"o":600.0,"d":"2025-03-19"}],"us_names":{"NVDA":"英伟达 NVIDIA","MSFT":"微软 Microsoft","GOOGL":"谷歌 Alphabet","META":"Meta","AMD":"AMD","TSM":"台积电 TSMC","AVGO":"博通 Broadcom","ORCL":"甲骨文 Oracle","AMZN":"亚马逊 Amazon"},"series":{"energyGlobal":[["2010",194],["2018",205],["2023",340],["2024",415],["2025",485],["2030E",950]],"energyGlobalNote":"2023 为区间 300–380 中值；2030 为预测","energyUS":[["2014",58],["2023",176],["2028E低",325],["2028E高",580]],"energyCN":[["2017",1221.5],["2018",1608.9],["2022",1300],["2023",1500],["2024",1660],["2030E",5257.6]],"hyperscale":[["2018",430],["2019Q3",504],["2021Q2",659],["2022Q2",800],["2023",992],["2024",1136],["2025Q3",1297],["2025Q4",1360]],"racks":[["2017",166],["2018",271],["2023",810],["2024",830],["2025E",1000]],"nvidia":[["FY2021",6.7],["FY2022",10.6],["FY2023",15.0],["FY2024",47.5],["FY2025",115.2],["FY2026",193.7],["FY27Q1",75.2],["FY27Q2",89.0]],"capex":[["AWS",230,230],["微软",190,190],["谷歌",180,190],["Meta",125,145]],"tokensCN":[["2024初",0.1],["2025底",100],["2026.03",140],["2026.06",500]],"tokensGoogle":[["2024.05",9.7],["2025.10",1300],["2026.05",3200]],"computeCN":[["2023",416.7],["2024",725.3],["2025",1590]],"qualityAdj":[["2022.11",20.0],["2024.10",0.07]],"usStocks":{"NVDA":[["2016-10",1.78],["2016-11",2.31],["2016-12",2.67],["2017-01",2.73],["2017-02",2.54],["2017-03",2.72],["2017-04",2.61],["2017-05",3.61],["2017-06",3.61],["2017-07",4.06],["2017-08",4.24],["2017-09",4.47],["2017-10",5.17],["2017-11",5.02],["2017-12",4.84],["2018-01",6.14],["2018-02",6.05],["2018-03",5.79],["2018-04",5.62],["2018-05",6.3],["2018-06",5.92],["2018-07",6.12],["2018-08",7.02],["2018-09",7.03],["2018-10",5.27],["2018-11",4.09],["2018-12",3.34],["2019-01",3.59],["2019-02",3.86],["2019-03",4.49],["2019-04",4.53],["2019-05",3.39],["2019-06",4.11],["2019-07",4.22],["2019-08",4.19],["2019-09",4.35],["2019-10",5.03],["2019-11",5.42],["2019-12",5.88],["2020-01",5.91],["2020-02",6.75],["2020-03",6.59],["2020-04",7.31],["2020-05",8.88],["2020-06",9.5],["2020-07",10.61],["2020-08",13.37],["2020-09",13.53],["2020-10",12.53],["2020-11",13.4],["2020-12",13.05],["2021-01",12.99],["2021-02",13.71],["2021-03",13.35],["2021-04",15.01],["2021-05",16.24],["2021-06",20.0],["2021-07",19.5],["2021-08",22.39],["2021-09",20.72],["2021-10",25.57],["2021-11",32.68],["2021-12",29.41],["2022-01",24.49],["2022-02",24.39],["2022-03",27.29],["2022-04",18.55],["2022-05",18.67],["2022-06",15.16],["2022-07",18.16],["2022-08",15.09],["2022-09",12.14],["2022-10",13.5],["2022-11",16.92],["2022-12",14.61],["2023-01",19.54],["2023-02",23.22],["2023-03",27.78],["2023-04",27.75],["2023-05",37.83],["2023-06",42.3],["2023-07",46.73],["2023-08",49.35],["2023-09",43.5],["2023-10",40.78],["2023-11",46.77],["2023-12",49.52],["2024-01",61.53],["2024-02",79.11],["2024-03",90.36],["2024-04",86.4],["2024-05",109.63],["2024-06",123.54],["2024-07",117.02],["2024-08",119.37],["2024-09",121.44],["2024-10",132.76],["2024-11",138.25],["2024-12",134.29],["2025-01",120.07],["2025-02",124.92],["2025-03",108.38],["2025-04",108.92],["2025-05",135.13],["2025-06",157.99],["2025-07",177.87],["2025-08",174.18],["2025-09",186.58],["2025-10",202.49],["2025-11",177.0],["2025-12",186.5],["2026-01",191.13],["2026-02",177.19],["2026-03",174.4],["2026-04",199.57],["2026-05",211.14],["2026-06",200.09],["2026-07",200.75],["2026-08",220.78],["2026-09",228.38],["2026-10",229.28]],"MSFT":[["2016-10",59.92],["2016-11",60.26],["2016-12",62.14],["2017-01",64.65],["2017-02",63.98],["2017-03",65.86],["2017-04",68.46],["2017-05",69.84],["2017-06",68.93],["2017-07",72.7],["2017-08",74.77],["2017-09",74.49],["2017-10",83.18],["2017-11",84.17],["2017-12",85.54],["2018-01",95.01],["2018-02",93.77],["2018-03",91.27],["2018-04",93.52],["2018-05",98.84],["2018-06",98.61],["2018-07",106.08],["2018-08",112.33],["2018-09",114.37],["2018-10",106.81],["2018-11",110.89],["2018-12",101.57],["2019-01",104.43],["2019-02",112.03],["2019-03",117.94],["2019-04",130.6],["2019-05",123.68],["2019-06",133.96],["2019-07",136.27],["2019-08",137.86],["2019-09",139.03],["2019-10",143.37],["2019-11",151.38],["2019-12",157.7],["2020-01",170.23],["2020-02",162.01],["2020-03",157.71],["2020-04",179.21],["2020-05",183.25],["2020-06",203.51],["2020-07",205.01],["2020-08",225.53],["2020-09",210.33],["2020-10",202.47],["2020-11",214.07],["2020-12",222.42],["2021-01",231.96],["2021-02",232.38],["2021-03",235.77],["2021-04",252.18],["2021-05",249.68],["2021-06",270.9],["2021-07",284.91],["2021-08",301.88],["2021-09",281.92],["2021-10",331.62],["2021-11",330.59],["2021-12",336.32],["2022-01",310.98],["2022-02",298.79],["2022-03",308.31],["2022-04",277.52],["2022-05",271.87],["2022-06",256.83],["2022-07",280.74],["2022-08",261.47],["2022-09",232.9],["2022-10",232.13],["2022-11",255.14],["2022-12",239.82],["2023-01",247.81],["2023-02",249.42],["2023-03",288.3],["2023-04",307.26],["2023-05",328.39],["2023-06",340.54],["2023-07",335.92],["2023-08",327.76],["2023-09",315.75],["2023-10",338.11],["2023-11",378.91],["2023-12",376.04],["2024-01",397.58],["2024-02",413.64],["2024-03",420.72],["2024-04",389.33],["2024-05",415.13],["2024-06",446.95],["2024-07",418.35],["2024-08",417.14],["2024-09",430.3],["2024-10",406.35],["2024-11",423.46],["2024-12",421.5],["2025-01",415.06],["2025-02",396.99],["2025-03",375.39],["2025-04",395.26],["2025-05",460.36],["2025-06",497.41],["2025-07",533.5],["2025-08",506.69],["2025-09",517.95],["2025-10",517.81],["2025-11",492.01],["2025-12",483.62],["2026-01",430.29],["2026-02",392.74],["2026-03",370.17],["2026-04",407.78],["2026-05",450.24],["2026-06",373.02],["2026-07",464.72],["2026-08",507.29],["2026-09",512.9],["2026-10",535.07]],"GOOGL":[["2016-10",40.49],["2016-11",38.79],["2016-12",39.62],["2017-01",41.01],["2017-02",42.25],["2017-03",42.39],["2017-04",46.23],["2017-05",49.35],["2017-06",46.48],["2017-07",47.27],["2017-08",47.76],["2017-09",48.69],["2017-10",51.65],["2017-11",51.81],["2017-12",52.67],["2018-01",59.11],["2018-02",55.2],["2018-03",51.86],["2018-04",50.93],["2018-05",55.0],["2018-06",56.46],["2018-07",61.36],["2018-08",61.59],["2018-09",60.35],["2018-10",54.53],["2018-11",55.48],["2018-12",52.25],["2019-01",56.29],["2019-02",56.33],["2019-03",58.84],["2019-04",59.95],["2019-05",55.33],["2019-06",54.14],["2019-07",60.91],["2019-08",59.53],["2019-09",61.06],["2019-10",62.94],["2019-11",65.2],["2019-12",66.97],["2020-01",71.64],["2020-02",66.96],["2020-03",58.1],["2020-04",67.33],["2020-05",71.68],["2020-06",70.9],["2020-07",74.4],["2020-08",81.48],["2020-09",73.28],["2020-10",80.81],["2020-11",87.72],["2020-12",87.63],["2021-01",91.37],["2021-02",101.1],["2021-03",103.13],["2021-04",117.67],["2021-05",117.84],["2021-06",122.09],["2021-07",134.73],["2021-08",144.7],["2021-09",133.68],["2021-10",148.05],["2021-11",141.9],["2021-12",144.85],["2022-01",135.3],["2022-02",135.06],["2022-03",139.07],["2022-04",114.11],["2022-05",113.76],["2022-06",108.96],["2022-07",116.32],["2022-08",108.22],["2022-09",95.65],["2022-10",94.51],["2022-11",100.99],["2022-12",88.23],["2023-01",98.84],["2023-02",90.06],["2023-03",103.73],["2023-04",107.34],["2023-05",122.87],["2023-06",119.7],["2023-07",132.72],["2023-08",136.17],["2023-09",130.86],["2023-10",124.08],["2023-11",132.53],["2023-12",139.69],["2024-01",140.1],["2024-02",138.46],["2024-03",150.93],["2024-04",162.78],["2024-05",172.5],["2024-06",182.15],["2024-07",171.54],["2024-08",163.38],["2024-09",165.85],["2024-10",171.11],["2024-11",168.95],["2024-12",189.3],["2025-01",204.02],["2025-02",170.28],["2025-03",154.64],["2025-04",158.8],["2025-05",171.74],["2025-06",176.23],["2025-07",191.9],["2025-08",212.91],["2025-09",243.1],["2025-10",281.19],["2025-11",320.18],["2025-12",313.0],["2026-01",338.0],["2026-02",311.76],["2026-03",287.56],["2026-04",384.8],["2026-05",380.34],["2026-06",357.37],["2026-07",356.13],["2026-08",339.35],["2026-09",344.08],["2026-10",351.66]],"META":[["2016-10",130.99],["2016-11",118.42],["2016-12",115.05],["2017-01",130.32],["2017-02",135.54],["2017-03",142.05],["2017-04",150.25],["2017-05",151.46],["2017-06",150.98],["2017-07",169.25],["2017-08",171.97],["2017-09",170.87],["2017-10",180.06],["2017-11",177.18],["2017-12",176.46],["2018-01",186.89],["2018-02",178.32],["2018-03",159.79],["2018-04",172.0],["2018-05",191.78],["2018-06",194.32],["2018-07",172.58],["2018-08",175.73],["2018-09",164.46],["2018-10",151.79],["2018-11",140.61],["2018-12",131.09],["2019-01",166.69],["2019-02",161.45],["2019-03",166.69],["2019-04",193.4],["2019-05",177.47],["2019-06",193.0],["2019-07",194.23],["2019-08",185.67],["2019-09",178.08],["2019-10",191.65],["2019-11",201.64],["2019-12",205.25],["2020-01",201.91],["2020-02",192.47],["2020-03",166.8],["2020-04",204.71],["2020-05",225.09],["2020-06",227.07],["2020-07",253.67],["2020-08",293.2],["2020-09",261.9],["2020-10",263.11],["2020-11",276.97],["2020-12",273.16],["2021-01",258.33],["2021-02",257.62],["2021-03",294.53],["2021-04",325.08],["2021-05",328.73],["2021-06",347.71],["2021-07",356.3],["2021-08",379.38],["2021-09",339.39],["2021-10",323.57],["2021-11",324.46],["2021-12",336.35],["2022-01",313.26],["2022-02",211.03],["2022-03",222.36],["2022-04",200.47],["2022-05",193.64],["2022-06",161.25],["2022-07",159.1],["2022-08",162.93],["2022-09",135.68],["2022-10",93.16],["2022-11",118.1],["2022-12",120.34],["2023-01",148.97],["2023-02",174.94],["2023-03",211.94],["2023-04",240.32],["2023-05",264.72],["2023-06",286.98],["2023-07",318.6],["2023-08",295.89],["2023-09",300.21],["2023-10",301.27],["2023-11",327.15],["2023-12",353.96],["2024-01",390.14],["2024-02",490.13],["2024-03",485.58],["2024-04",430.17],["2024-05",466.83],["2024-06",504.22],["2024-07",474.83],["2024-08",521.31],["2024-09",572.44],["2024-10",567.58],["2024-11",574.32],["2024-12",585.51],["2025-01",689.18],["2025-02",668.2],["2025-03",576.36],["2025-04",549.0],["2025-05",647.49],["2025-06",738.09],["2025-07",773.44],["2025-08",738.7],["2025-09",734.38],["2025-10",648.35],["2025-11",647.95],["2025-12",660.09],["2026-01",716.5],["2026-02",648.18],["2026-03",572.13],["2026-04",611.91],["2026-05",632.51],["2026-06",563.29],["2026-07",556.71],["2026-08",572.34],["2026-09",725.18],["2026-10",718.67]],"AMD":[["2016-10",7.23],["2016-11",8.91],["2016-12",11.34],["2017-01",10.37],["2017-02",14.46],["2017-03",14.55],["2017-04",13.3],["2017-05",11.19],["2017-06",12.48],["2017-07",13.61],["2017-08",13.0],["2017-09",12.75],["2017-10",10.98],["2017-11",10.89],["2017-12",10.28],["2018-01",13.74],["2018-02",12.11],["2018-03",10.05],["2018-04",10.88],["2018-05",13.73],["2018-06",14.99],["2018-07",18.33],["2018-08",25.17],["2018-09",30.89],["2018-10",18.21],["2018-11",21.3],["2018-12",18.46],["2019-01",24.41],["2019-02",23.53],["2019-03",25.52],["2019-04",27.63],["2019-05",27.41],["2019-06",30.37],["2019-07",30.45],["2019-08",31.45],["2019-09",28.99],["2019-10",33.93],["2019-11",39.15],["2019-12",45.86],["2020-01",47.0],["2020-02",45.48],["2020-03",45.48],["2020-04",52.39],["2020-05",53.8],["2020-06",52.61],["2020-07",77.43],["2020-08",90.82],["2020-09",81.99],["2020-10",75.29],["2020-11",92.66],["2020-12",91.71],["2021-01",85.64],["2021-02",84.51],["2021-03",78.5],["2021-04",81.62],["2021-05",80.08],["2021-06",93.93],["2021-07",106.19],["2021-08",110.72],["2021-09",102.9],["2021-10",120.23],["2021-11",158.37],["2021-12",143.9],["2022-01",114.25],["2022-02",123.34],["2022-03",109.34],["2022-04",85.52],["2022-05",101.86],["2022-06",76.47],["2022-07",94.47],["2022-08",84.87],["2022-09",63.36],["2022-10",60.06],["2022-11",77.63],["2022-12",64.77],["2023-01",75.15],["2023-02",78.58],["2023-03",98.01],["2023-04",89.37],["2023-05",118.21],["2023-06",113.91],["2023-07",114.4],["2023-08",105.72],["2023-09",102.82],["2023-10",98.5],["2023-11",121.16],["2023-12",147.41],["2024-01",167.69],["2024-02",192.53],["2024-03",180.49],["2024-04",158.38],["2024-05",166.9],["2024-06",162.21],["2024-07",144.48],["2024-08",148.56],["2024-09",164.08],["2024-10",144.07],["2024-11",137.18],["2024-12",120.79],["2025-01",115.95],["2025-02",99.86],["2025-03",102.74],["2025-04",97.35],["2025-05",110.73],["2025-06",141.9],["2025-07",176.31],["2025-08",162.63],["2025-09",161.79],["2025-10",256.12],["2025-11",217.53],["2025-12",214.16],["2026-01",236.73],["2026-02",200.21],["2026-03",203.43],["2026-04",354.49],["2026-05",516.1],["2026-06",580.91],["2026-07",476.15],["2026-08",470.72],["2026-09",611.76],["2026-10",608.1]],"TSM":[["2016-10",31.1],["2016-11",29.69],["2016-12",28.75],["2017-01",30.91],["2017-02",31.47],["2017-03",32.84],["2017-04",33.07],["2017-05",35.36],["2017-06",34.96],["2017-07",35.96],["2017-08",36.97],["2017-09",37.55],["2017-10",42.33],["2017-11",39.6],["2017-12",39.65],["2018-01",45.31],["2018-02",43.35],["2018-03",43.76],["2018-04",38.45],["2018-05",38.7],["2018-06",36.56],["2018-07",41.21],["2018-08",43.6],["2018-09",44.16],["2018-10",38.1],["2018-11",37.59],["2018-12",36.91],["2019-01",37.62],["2019-02",39.05],["2019-03",40.96],["2019-04",43.82],["2019-05",38.35],["2019-06",39.17],["2019-07",42.63],["2019-08",42.63],["2019-09",46.48],["2019-10",51.63],["2019-11",53.09],["2019-12",58.1],["2020-01",53.94],["2020-02",53.84],["2020-03",47.79],["2020-04",53.13],["2020-05",50.33],["2020-06",56.77],["2020-07",78.89],["2020-08",79.25],["2020-09",81.07],["2020-10",83.87],["2020-11",97.02],["2020-12",109.04],["2021-01",121.52],["2021-02",125.94],["2021-03",118.28],["2021-04",116.74],["2021-05",117.36],["2021-06",120.16],["2021-07",116.64],["2021-08",119.01],["2021-09",111.65],["2021-10",113.7],["2021-11",117.15],["2021-12",120.31],["2022-01",122.63],["2022-02",107.01],["2022-03",104.26],["2022-04",92.93],["2022-05",95.3],["2022-06",81.75],["2022-07",88.48],["2022-08",83.35],["2022-09",68.56],["2022-10",61.55],["2022-11",82.98],["2022-12",74.49],["2023-01",92.73],["2023-02",87.07],["2023-03",93.02],["2023-04",84.3],["2023-05",98.59],["2023-06",100.92],["2023-07",99.15],["2023-08",93.57],["2023-09",86.9],["2023-10",86.31],["2023-11",97.31],["2023-12",104.0],["2024-01",112.96],["2024-02",128.67],["2024-03",136.05],["2024-04",137.34],["2024-05",151.04],["2024-06",173.81],["2024-07",165.8],["2024-08",171.7],["2024-09",173.67],["2024-10",190.54],["2024-11",184.66],["2024-12",197.49],["2025-01",209.32],["2025-02",180.53],["2025-03",166.0],["2025-04",166.69],["2025-05",193.32],["2025-06",226.49],["2025-07",241.62],["2025-08",230.87],["2025-09",279.29],["2025-10",300.43],["2025-11",291.51],["2025-12",303.89],["2026-01",330.56],["2026-02",374.58],["2026-03",337.95],["2026-04",396.06],["2026-05",418.45],["2026-06",477.57],["2026-07",404.25],["2026-08",415.32],["2026-09",456.19],["2026-10",453.31]],"AVGO":[["2016-10",17.03],["2016-11",17.05],["2016-12",17.68],["2017-01",19.95],["2017-02",21.09],["2017-03",21.9],["2017-04",22.08],["2017-05",23.95],["2017-06",23.3],["2017-07",24.67],["2017-08",25.21],["2017-09",24.25],["2017-10",26.39],["2017-11",27.79],["2017-12",25.69],["2018-01",24.8],["2018-02",24.65],["2018-03",23.57],["2018-04",22.94],["2018-05",25.21],["2018-06",24.26],["2018-07",22.18],["2018-08",21.9],["2018-09",24.67],["2018-10",22.35],["2018-11",23.74],["2018-12",25.43],["2019-01",26.82],["2019-02",27.54],["2019-03",30.07],["2019-04",31.84],["2019-05",25.16],["2019-06",28.79],["2019-07",29.0],["2019-08",28.26],["2019-09",27.61],["2019-10",29.29],["2019-11",31.62],["2019-12",31.6],["2020-01",30.52],["2020-02",27.26],["2020-03",23.71],["2020-04",27.16],["2020-05",29.13],["2020-06",31.56],["2020-07",31.68],["2020-08",34.72],["2020-09",36.43],["2020-10",34.96],["2020-11",40.16],["2020-12",43.78],["2021-01",45.05],["2021-02",46.99],["2021-03",46.37],["2021-04",45.62],["2021-05",47.23],["2021-06",47.68],["2021-07",48.54],["2021-08",49.72],["2021-09",48.49],["2021-10",53.17],["2021-11",55.37],["2021-12",66.54],["2022-01",58.59],["2022-02",58.74],["2022-03",62.97],["2022-04",55.44],["2022-05",58.01],["2022-06",48.58],["2022-07",53.55],["2022-08",49.91],["2022-09",44.4],["2022-10",47.01],["2022-11",55.1],["2022-12",55.91],["2023-01",58.5],["2023-02",59.43],["2023-03",64.15],["2023-04",62.65],["2023-05",80.8],["2023-06",86.74],["2023-07",89.86],["2023-08",92.29],["2023-09",83.06],["2023-10",84.14],["2023-11",92.57],["2023-12",111.62],["2024-01",118.0],["2024-02",130.05],["2024-03",132.54],["2024-04",130.03],["2024-05",132.85],["2024-06",160.55],["2024-07",160.68],["2024-08",162.82],["2024-09",172.5],["2024-10",169.77],["2024-11",162.08],["2024-12",231.84],["2025-01",221.27],["2025-02",199.43],["2025-03",167.43],["2025-04",192.47],["2025-05",242.07],["2025-06",275.65],["2025-07",293.7],["2025-08",297.39],["2025-09",329.91],["2025-10",369.63],["2025-11",402.96],["2025-12",346.1],["2026-01",331.3],["2026-02",319.55],["2026-03",309.51],["2026-04",417.43],["2026-05",446.77],["2026-06",377.75],["2026-07",389.28],["2026-08",370.34],["2026-09",351.19],["2026-10",361.54]],"ORCL":[["2016-10",38.42],["2016-11",40.19],["2016-12",38.45],["2017-01",40.11],["2017-02",42.59],["2017-03",44.61],["2017-04",44.96],["2017-05",45.39],["2017-06",50.14],["2017-07",49.93],["2017-08",50.33],["2017-09",48.35],["2017-10",50.9],["2017-11",49.06],["2017-12",47.28],["2018-01",51.59],["2018-02",50.67],["2018-03",45.75],["2018-04",45.67],["2018-05",46.72],["2018-06",44.06],["2018-07",47.68],["2018-08",48.58],["2018-09",51.56],["2018-10",48.84],["2018-11",48.76],["2018-12",45.15],["2019-01",50.23],["2019-02",52.13],["2019-03",53.71],["2019-04",55.33],["2019-05",50.6],["2019-06",56.97],["2019-07",56.3],["2019-08",52.06],["2019-09",55.03],["2019-10",54.49],["2019-11",56.14],["2019-12",52.98],["2020-01",52.45],["2020-02",49.46],["2020-03",48.33],["2020-04",52.97],["2020-05",53.77],["2020-06",55.27],["2020-07",55.45],["2020-08",57.22],["2020-09",59.7],["2020-10",56.11],["2020-11",57.72],["2020-12",64.69],["2021-01",60.43],["2021-02",64.51],["2021-03",70.17],["2021-04",75.79],["2021-05",78.74],["2021-06",77.84],["2021-07",87.14],["2021-08",89.13],["2021-09",87.13],["2021-10",95.94],["2021-11",90.74],["2021-12",87.21],["2022-01",81.16],["2022-02",75.97],["2022-03",82.73],["2022-04",73.4],["2022-05",71.92],["2022-06",69.87],["2022-07",77.84],["2022-08",74.15],["2022-09",61.07],["2022-10",78.07],["2022-11",83.03],["2022-12",81.74],["2023-01",88.46],["2023-02",87.4],["2023-03",92.92],["2023-04",94.72],["2023-05",105.94],["2023-06",119.09],["2023-07",117.23],["2023-08",120.39],["2023-09",105.92],["2023-10",103.4],["2023-11",116.21],["2023-12",105.43],["2024-01",111.7],["2024-02",111.68],["2024-03",125.61],["2024-04",113.75],["2024-05",117.19],["2024-06",141.2],["2024-07",139.45],["2024-08",141.29],["2024-09",170.4],["2024-10",167.84],["2024-11",184.84],["2024-12",166.64],["2025-01",170.06],["2025-02",166.06],["2025-03",139.81],["2025-04",140.72],["2025-05",165.53],["2025-06",218.63],["2025-07",253.77],["2025-08",226.13],["2025-09",281.24],["2025-10",262.61],["2025-11",201.95],["2025-12",194.91],["2026-01",164.58],["2026-02",145.4],["2026-03",147.11],["2026-04",161.39],["2026-05",225.78],["2026-06",146.55],["2026-07",129.87],["2026-08",149.12],["2026-09",137.3],["2026-10",141.4]],"AMZN":[["2016-10",39.49],["2016-11",37.53],["2016-12",37.49],["2017-01",41.17],["2017-02",42.25],["2017-03",44.33],["2017-04",46.25],["2017-05",49.73],["2017-06",48.4],["2017-07",49.39],["2017-08",49.03],["2017-09",48.07],["2017-10",55.26],["2017-11",58.84],["2017-12",58.47],["2018-01",72.54],["2018-02",75.62],["2018-03",72.37],["2018-04",78.31],["2018-05",81.48],["2018-06",84.99],["2018-07",88.87],["2018-08",100.64],["2018-09",100.15],["2018-10",79.9],["2018-11",84.51],["2018-12",75.1],["2019-01",85.94],["2019-02",81.99],["2019-03",89.04],["2019-04",96.33],["2019-05",88.75],["2019-06",94.68],["2019-07",93.34],["2019-08",88.81],["2019-09",86.8],["2019-10",88.83],["2019-11",90.04],["2019-12",92.39],["2020-01",100.44],["2020-02",94.19],["2020-03",97.49],["2020-04",123.7],["2020-05",122.12],["2020-06",137.94],["2020-07",158.23],["2020-08",172.55],["2020-09",157.44],["2020-10",151.81],["2020-11",158.4],["2020-12",162.85],["2021-01",160.31],["2021-02",154.65],["2021-03",154.7],["2021-04",173.37],["2021-05",161.15],["2021-06",172.01],["2021-07",166.38],["2021-08",173.54],["2021-09",164.25],["2021-10",168.62],["2021-11",175.35],["2021-12",166.72],["2022-01",149.57],["2022-02",153.56],["2022-03",163.0],["2022-04",124.28],["2022-05",120.21],["2022-06",106.21],["2022-07",134.95],["2022-08",126.77],["2022-09",113.0],["2022-10",102.44],["2022-11",96.54],["2022-12",84.0],["2023-01",103.13],["2023-02",94.23],["2023-03",103.29],["2023-04",105.45],["2023-05",120.58],["2023-06",130.36],["2023-07",133.68],["2023-08",138.01],["2023-09",127.12],["2023-10",133.09],["2023-11",146.09],["2023-12",151.94],["2024-01",155.2],["2024-02",176.76],["2024-03",180.38],["2024-04",175.0],["2024-05",176.44],["2024-06",193.25],["2024-07",186.98],["2024-08",178.5],["2024-09",186.33],["2024-10",186.4],["2024-11",207.89],["2024-12",219.39],["2025-01",237.68],["2025-02",212.28],["2025-03",190.26],["2025-04",184.42],["2025-05",205.01],["2025-06",219.39],["2025-07",234.11],["2025-08",229.0],["2025-09",219.57],["2025-10",244.22],["2025-11",233.22],["2025-12",230.82],["2026-01",239.3],["2026-02",210.0],["2026-03",208.27],["2026-04",265.06],["2026-05",270.64],["2026-06",238.34],["2026-07",271.58],["2026-08",259.77],["2026-09",249.15],["2026-10",262.43]]},"usNames":{"NVDA":"英伟达 NVIDIA","MSFT":"微软 Microsoft","GOOGL":"谷歌 Alphabet","META":"Meta","AMD":"AMD","TSM":"台积电 TSMC","AVGO":"博通 Broadcom","ORCL":"甲骨文 Oracle","AMZN":"亚马逊 Amazon"},"cnStocks":{"寒武纪":[["2020-07-31",166.51],["2020-08-31",113.09],["2020-09-30",106.5],["2020-10-30",124.55],["2020-11-30",110.59],["2020-12-31",97.5],["2021-01-29",102.08],["2021-02-26",95.65],["2021-03-31",93.55],["2021-04-30",73.95],["2021-05-31",78.62],["2021-06-30",91.74],["2021-07-30",66.2],["2021-08-31",58.5],["2021-09-30",52.43],["2021-10-29",50.41],["2021-11-30",63.83],["2021-12-31",62.82],["2022-01-28",51.87],["2022-02-28",52.38],["2022-03-31",41.74],["2022-04-29",33.8],["2022-05-31",36.98],["2022-06-30",42.42],["2022-07-29",39.93],["2022-08-31",38.65],["2022-09-30",41.06],["2022-10-31",43.13],["2022-11-30",41.56],["2022-12-30",35.61],["2023-01-31",40.67],["2023-02-28",55.35],["2023-03-31",123.79],["2023-04-28",166.44],["2023-05-31",169.59],["2023-06-30",125.17],["2023-07-31",109.07],["2023-08-31",105.57],["2023-09-28",82.18],["2023-10-31",70.96],["2023-11-30",99.54],["2023-12-29",89.57],["2024-01-31",72.82],["2024-02-29",112.19],["2024-03-29",115.41],["2024-04-30",114.02],["2024-05-31",116.3],["2024-06-28",132.33],["2024-07-31",176.21],["2024-08-30",171.27],["2024-09-30",193.06],["2024-10-31",303.42],["2024-11-29",375.5],["2024-12-31",440.6],["2025-01-27",382.89],["2025-02-28",492.58],["2025-03-31",417.11],["2025-04-30",471.21],["2025-05-30",404.13],["2025-06-30",402.68],["2025-07-31",475.17],["2025-08-29",1000.66],["2025-09-30",888.26],["2025-10-31",921.81],["2025-11-28",892.28],["2025-12-31",908.76],["2026-01-30",843.89],["2026-02-27",789.6],["2026-03-31",658.72],["2026-04-30",1139.91],["2026-05-29",1310.0],["2026-06-30",1595.55],["2026-07-31",1106.0],["2026-08-31",1112.18],["2026-09-30",1009.01],["2026-10-09",985.99]],"科大讯飞":[["2015-01-30",13.06],["2015-02-27",16.57],["2015-03-31",21.95],["2015-04-30",31.5],["2015-05-29",33.1],["2015-06-30",22.19],["2015-07-31",23.75],["2015-08-31",17.32],["2015-09-30",16.77],["2015-10-30",23.8],["2015-11-30",22.25],["2015-12-31",23.6],["2016-01-29",15.77],["2016-02-29",15.77],["2016-03-15",17.52],["2016-05-31",18.32],["2016-06-30",20.87],["2016-07-29",18.3],["2016-08-31",19.21],["2016-09-30",17.92],["2016-10-31",18.95],["2016-11-30",18.75],["2016-12-30",17.03],["2017-01-26",16.99],["2017-02-28",19.47],["2017-03-31",22.37],["2017-04-28",20.17],["2017-05-31",18.91],["2017-06-30",25.63],["2017-07-31",30.65],["2017-08-31",37.04],["2017-09-29",34.8],["2017-10-31",34.77],["2017-11-30",42.94],["2017-12-29",38.46],["2018-01-31",35.67],["2018-02-28",35.83],["2018-03-30",39.59],["2018-04-27",34.22],["2018-05-31",35.31],["2018-06-29",31.17],["2018-07-31",30.51],["2018-08-31",30.35],["2018-09-28",27.67],["2018-10-31",21.67],["2018-11-30",23.72],["2018-12-28",23.74],["2019-01-31",26.39],["2019-02-28",34.81],["2019-03-29",35.39],["2019-04-30",31.41],["2019-05-31",28.18],["2019-06-28",32.34],["2019-07-31",31.95],["2019-08-30",32.0],["2019-09-30",30.96],["2019-10-31",32.29],["2019-11-29",32.16],["2019-12-31",33.68],["2020-01-23",34.39],["2020-02-28",37.79],["2020-03-31",33.66],["2020-04-30",32.48],["2020-05-29",31.15],["2020-06-30",36.73],["2020-07-31",35.92],["2020-08-31",36.99],["2020-09-30",33.57],["2020-10-30",37.34],["2020-11-30",37.52],["2020-12-31",40.17],["2021-01-29",46.05],["2021-02-26",47.51],["2021-03-31",47.63],["2021-04-30",50.27],["2021-05-31",61.4],["2021-06-30",67.08],["2021-07-30",58.1],["2021-08-31",51.88],["2021-09-30",52.4],["2021-10-29",55.92],["2021-11-30",53.5],["2021-12-31",52.01],["2022-01-28",42.9],["2022-02-28",48.49],["2022-03-31",46.07],["2022-04-29",36.5],["2022-05-31",35.86],["2022-06-30",40.82],["2022-07-29",41.64],["2022-08-31",37.09],["2022-09-30",32.42],["2022-10-31",34.63],["2022-11-30",31.85],["2022-12-30",32.43],["2023-01-31",40.18],["2023-02-28",47.94],["2023-03-31",63.28],["2023-04-28",60.2],["2023-05-31",59.35],["2023-06-30",67.56],["2023-07-31",62.58],["2023-08-31",54.53],["2023-09-28",50.36],["2023-10-31",45.26],["2023-11-30",44.45],["2023-12-29",46.08],["2024-01-31",38.1],["2024-02-29",49.09],["2024-03-29",48.42],["2024-04-30",44.81],["2024-05-31",41.9],["2024-06-28",42.65],["2024-07-31",39.52],["2024-08-30",34.19],["2024-09-30",44.24],["2024-10-31",45.75],["2024-11-29",51.11],["2024-12-31",48.12],["2025-01-27",50.48],["2025-02-28",51.6],["2025-03-31",47.37],["2025-04-30",46.73],["2025-05-30",45.83],["2025-06-30",47.68],["2025-07-31",48.68],["2025-08-29",53.25],["2025-09-30",55.95],["2025-10-31",55.5],["2025-11-28",49.42],["2025-12-31",50.19],["2026-01-30",59.5],["2026-02-27",55.72],["2026-03-31",46.11],["2026-04-30",47.69],["2026-05-29",47.8],["2026-06-30",40.74],["2026-07-31",42.22],["2026-08-31",40.3],["2026-09-30",37.22],["2026-10-09",37.4]],"中际旭创":[["2015-01-30",2.47],["2015-02-27",2.78],["2015-03-20",4.05],["2015-04-30",6.69],["2015-05-29",8.53],["2015-06-30",8.41],["2015-07-31",4.75],["2015-08-31",2.71],["2015-09-30",2.98],["2015-10-30",5.27],["2015-11-30",5.68],["2015-12-31",8.87],["2016-01-29",4.33],["2016-02-29",3.91],["2016-03-10",3.58],["2016-09-30",4.22],["2016-10-31",10.73],["2016-11-30",8.81],["2016-12-30",9.46],["2017-01-26",9.03],["2017-02-28",11.77],["2017-03-31",14.85],["2017-04-28",14.52],["2017-05-31",15.14],["2017-06-30",18.36],["2017-07-31",19.18],["2017-08-31",17.27],["2017-09-29",22.19],["2017-10-31",22.15],["2017-11-30",19.17],["2017-12-29",27.27],["2018-01-31",27.8],["2018-02-28",33.06],["2018-03-30",36.43],["2018-04-27",30.83],["2018-05-31",34.1],["2018-06-29",28.06],["2018-07-31",23.94],["2018-08-31",21.03],["2018-09-28",19.49],["2018-10-31",16.76],["2018-11-30",19.84],["2018-12-28",18.15],["2019-01-31",16.92],["2019-02-28",25.24],["2019-03-29",25.75],["2019-04-30",24.18],["2019-05-31",18.87],["2019-06-28",21.76],["2019-07-31",27.19],["2019-08-30",25.75],["2019-09-30",26.53],["2019-10-31",28.88],["2019-11-29",28.95],["2019-12-31",34.8],["2020-01-23",35.74],["2020-02-28",41.91],["2020-03-31",35.95],["2020-04-30",43.93],["2020-05-29",38.28],["2020-06-30",42.6],["2020-07-31",39.84],["2020-08-31",39.94],["2020-09-30",33.53],["2020-10-30",31.38],["2020-11-30",32.56],["2020-12-31",33.94],["2021-01-29",34.61],["2021-02-26",30.37],["2021-03-31",22.71],["2021-04-30",21.97],["2021-05-31",26.99],["2021-06-30",25.16],["2021-07-30",28.14],["2021-08-31",22.93],["2021-09-30",22.54],["2021-10-29",21.24],["2021-11-30",24.88],["2021-12-31",28.02],["2022-01-28",23.2],["2022-02-28",25.11],["2022-03-31",20.19],["2022-04-29",19.48],["2022-05-31",20.73],["2022-06-30",19.95],["2022-07-29",21.2],["2022-08-31",18.71],["2022-09-30",16.38],["2022-10-31",18.68],["2022-11-30",18.21],["2022-12-30",17.06],["2023-01-31",18.55],["2023-02-28",23.15],["2023-03-31",39.96],["2023-04-28",62.3],["2023-05-31",74.88],["2023-06-30",103.72],["2023-07-31",89.75],["2023-08-31",80.14],["2023-09-28",80.98],["2023-10-31",60.83],["2023-11-30",65.98],["2023-12-29",78.91],["2024-01-31",71.64],["2024-02-29",109.26],["2024-03-29",110.27],["2024-04-30",131.64],["2024-05-31",110.78],["2024-06-28",135.98],["2024-07-31",127.6],["2024-08-30",107.0],["2024-09-30",152.96],["2024-10-31",141.12],["2024-11-29",124.83],["2024-12-31",121.61],["2025-01-27",112.92],["2025-02-28",98.97],["2025-03-31",96.74],["2025-04-30",81.59],["2025-05-30",91.65],["2025-06-30",144.46],["2025-07-31",216.21],["2025-08-29",353.52],["2025-09-30",402.28],["2025-10-31",472.01],["2025-11-28",513.5],["2025-12-31",609.0],["2026-01-30",648.0],["2026-02-27",533.0],["2026-03-31",568.41],["2026-04-30",857.5],["2026-05-29",1161.16],["2026-06-30",1270.0],["2026-07-31",902.01],["2026-08-31",851.9],["2026-09-30",808.44],["2026-10-09",775.29]],"海光信息":[["2022-08-31",49.62],["2022-09-30",58.26],["2022-10-31",44.12],["2022-11-30",40.88],["2022-12-30",39.56],["2023-01-31",42.45],["2023-02-28",51.32],["2023-03-31",76.61],["2023-04-28",93.59],["2023-05-31",92.17],["2023-06-30",67.75],["2023-07-31",56.57],["2023-08-31",58.67],["2023-09-28",53.46],["2023-10-31",61.45],["2023-11-30",71.25],["2023-12-29",70.46],["2024-01-31",65.75],["2024-02-29",84.6],["2024-03-29",76.74],["2024-04-30",78.73],["2024-05-31",70.78],["2024-06-28",69.91],["2024-07-31",79.09],["2024-08-30",78.98],["2024-09-30",102.87],["2024-10-31",128.01],["2024-11-29",125.4],["2024-12-31",149.38],["2025-01-27",127.59],["2025-02-28",159.59],["2025-03-31",140.89],["2025-04-30",148.19],["2025-05-23",135.89],["2025-06-30",141.05],["2025-07-31",138.96],["2025-08-29",194.28],["2025-09-30",252.36],["2025-10-31",229.09],["2025-11-28",217.06],["2025-12-31",224.17],["2026-01-30",264.29],["2026-02-27",260.95],["2026-03-31",210.11],["2026-04-30",296.1],["2026-05-29",293.75],["2026-06-30",370.3],["2026-07-31",277.0],["2026-08-31",253.9],["2026-09-30",226.8],["2026-10-09",219.59]],"中科曙光":[["2015-01-30",10.82],["2015-02-27",13.23],["2015-03-31",16.04],["2015-04-30",32.66],["2015-05-29",35.45],["2015-06-30",20.3],["2015-07-31",17.16],["2015-08-31",12.26],["2015-09-30",13.25],["2015-10-30",19.65],["2015-11-30",21.44],["2015-12-31",21.47],["2016-01-29",14.16],["2016-02-29",11.58],["2016-03-31",15.85],["2016-04-29",16.11],["2016-05-31",17.14],["2016-06-30",18.56],["2016-07-29",16.61],["2016-08-31",16.3],["2016-09-30",14.67],["2016-10-31",14.77],["2016-11-30",14.04],["2016-12-30",12.44],["2017-01-26",10.97],["2017-02-28",11.18],["2017-03-31",11.67],["2017-04-28",11.91],["2017-05-31",13.12],["2017-06-30",12.64],["2017-07-31",11.0],["2017-08-31",12.94],["2017-09-29",17.11],["2017-10-31",18.2],["2017-11-30",20.49],["2017-12-29",18.82],["2018-01-31",17.7],["2018-02-28",20.28],["2018-03-30",26.2],["2018-04-27",23.8],["2018-05-31",21.33],["2018-06-29",21.74],["2018-07-31",23.81],["2018-08-31",25.06],["2018-09-28",22.26],["2018-10-31",19.47],["2018-11-30",18.78],["2018-12-28",16.64],["2019-01-31",17.83],["2019-02-28",21.95],["2019-03-29",29.09],["2019-04-30",27.32],["2019-05-31",25.69],["2019-06-28",23.48],["2019-07-31",23.81],["2019-08-30",23.7],["2019-09-30",22.93],["2019-10-31",22.28],["2019-11-29",22.67],["2019-12-31",23.11],["2020-01-23",28.16],["2020-02-28",30.68],["2020-03-31",29.6],["2020-04-30",32.92],["2020-05-29",35.73],["2020-06-30",36.91],["2020-07-31",42.89],["2020-08-31",43.7],["2020-09-30",36.23],["2020-10-30",34.29],["2020-11-30",33.87],["2020-12-31",32.74],["2021-01-29",28.14],["2021-02-26",29.34],["2021-03-31",27.42],["2021-04-30",24.39],["2021-05-31",26.23],["2021-06-30",26.26],["2021-07-30",30.93],["2021-08-31",26.97],["2021-09-30",25.47],["2021-10-29",26.12],["2021-11-30",26.61],["2021-12-31",26.22],["2022-01-28",29.0],["2022-02-28",31.61],["2022-03-31",28.34],["2022-04-29",24.45],["2022-05-31",23.74],["2022-06-30",27.83],["2022-07-29",27.61],["2022-08-31",25.1],["2022-09-30",22.53],["2022-10-31",23.7],["2022-11-30",22.29],["2022-12-30",20.95],["2023-01-31",22.92],["2023-02-28",31.14],["2023-03-31",37.14],["2023-04-28",49.51],["2023-05-31",52.31],["2023-06-30",49.93],["2023-07-31",43.93],["2023-08-31",39.72],["2023-09-28",37.57],["2023-10-31",35.82],["2023-11-30",36.16],["2023-12-29",38.6],["2024-01-31",30.46],["2024-02-29",48.82],["2024-03-29",46.86],["2024-04-30",46.79],["2024-05-31",39.98],["2024-06-28",40.78],["2024-07-31",43.18],["2024-08-30",36.16],["2024-09-30",47.0],["2024-10-31",60.48],["2024-11-29",84.08],["2024-12-31",71.6],["2025-01-27",66.27],["2025-02-28",71.02],["2025-03-31",65.64],["2025-04-30",62.6],["2025-05-23",61.45],["2025-06-30",69.95],["2025-07-31",68.51],["2025-08-29",88.05],["2025-09-30",118.8],["2025-10-31",106.0],["2025-11-28",98.71],["2025-12-31",85.19],["2026-01-30",89.32],["2026-02-27",91.8],["2026-03-31",78.22],["2026-04-30",92.58],["2026-05-29",87.84],["2026-06-30",107.23],["2026-07-31",83.46],["2026-08-31",88.27],["2026-09-30",79.52],["2026-10-09",75.37]]}},"orgRates":[{"org":"Meta","n":22,"first":"2023-02-24","last":"2026-09-02","eci_first":110.2,"eci_last":156.8,"eci_best":156.8,"rate_all":13.42,"rate_post":18.48,"country":"United States of America","frontier":[["2023-02-24",110.2,"LLaMA-65B"],["2023-07-18",113.8,"Llama 2-70B"],["2024-04-18",122.9,"Llama 3-70B"],["2024-07-23",128.8,"Llama 3.1-405B"],["2025-04-05",129.6,"Llama 4 Scout"],["2025-04-06",132.2,"Llama 4 Maverick"],["2026-04-08",152.0,"Muse Spark"],["2026-07-09",154.2,"Muse Spark 1.1"],["2026-08-05",154.9,"Muse Spark 1.2"],["2026-09-02",156.8,"Muse Spark 1.3"]],"span_months":42.2},{"org":"智谱 GLM","n":6,"first":"2025-12-22","last":"2026-08-20","eci_first":143.5,"eci_last":151.9,"eci_best":155.6,"rate_all":18.43,"rate_post":18.43,"country":"China","frontier":[["2025-12-22",143.5,"GLM-4.7"],["2026-02-11",145.8,"GLM-5"],["2026-04-07",149.8,"GLM-5.1"],["2026-06-16",151.8,"GLM-5.2"],["2026-08-14",155.6,"GLM-5.3"]],"span_months":7.9},{"org":"Anthropic","n":26,"first":"2023-07-11","last":"2026-09-28","eci_first":120.1,"eci_last":165.0,"eci_best":167.3,"rate_all":14.54,"rate_post":16.92,"country":"United States of America","frontier":[["2023-07-11",120.1,"Claude 2"],["2023-08-09",120.3,"Claude Instant"],["2024-02-29",126.9,"Claude 3 Opus"],["2024-06-20",130.0,"Claude 3.5 Sonnet"],["2024-10-22",133.6,"Claude 3.5 Sonnet (October 2024)"],["2025-02-24",141.2,"Claude 3.7 Sonnet"],["2025-05-22",142.7,"Claude Opus 4"],["2025-08-05",144.1,"Claude Opus 4.1"],["2025-09-29",146.8,"Claude Sonnet 4.5"],["2025-11-24",150.1,"Claude Opus 4.5"],["2026-02-05",155.2,"Claude Opus 4.6"],["2026-04-16",156.2,"Claude Opus 4.7"],["2026-05-28",158.2,"Claude Opus 4.8"],["2026-06-09",162.1,"Claude Fable 5"],["2026-07-24",162.8,"Claude Opus 5"],["2026-09-01",164.7,"Claude Fable 5.1"],["2026-09-22",167.3,"Claude Opus 5.5"]],"span_months":38.6},{"org":"Moonshot","n":6,"first":"2025-07-12","last":"2026-07-16","eci_first":140.1,"eci_last":157.4,"eci_best":157.4,"rate_all":16.06,"rate_post":16.06,"country":"China","frontier":[["2025-07-12",140.1,"Kimi K2 (Jul 2025)"],["2025-11-06",146.0,"Kimi K2 Thinking"],["2026-01-27",148.0,"Kimi K2.5"],["2026-04-20",151.1,"Kimi K2.6"],["2026-07-16",157.4,"Kimi K3"]],"span_months":12.1},{"org":"OpenAI","n":46,"first":"2023-03-14","last":"2026-09-29","eci_first":125.9,"eci_last":166.1,"eci_best":166.4,"rate_all":13.64,"rate_post":14.99,"country":"United States of America","frontier":[["2023-03-14",125.9,"GPT-4 (Mar 2023)"],["2024-01-25",126.5,"GPT-4 Turbo (Nov 2023)"],["2024-04-09",127.2,"GPT-4 Turbo (Apr 2024)"],["2024-05-13",129.0,"GPT-4o (May 2024)"],["2024-09-12",135.8,"o1-mini"],["2024-12-17",141.9,"o1"],["2025-04-16",146.9,"o3"],["2025-06-10",147.4,"o3-pro"],["2025-08-07",150.0,"GPT-5"],["2025-10-07",150.3,"GPT-5 Pro"],["2025-12-11",155.4,"GPT-5.2 Pro"],["2026-02-05",156.8,"GPT-5.3 Codex"],["2026-03-05",158.9,"GPT-5.4 Pro"],["2026-04-23",162.1,"GPT-5.5 Pro"],["2026-09-03",166.4,"GPT-6 Astra"]],"span_months":42.5},{"org":"Google","n":32,"first":"2023-12-13","last":"2026-09-02","eci_first":117.0,"eci_last":156.7,"eci_best":157.3,"rate_all":15.77,"rate_post":14.36,"country":"United States of America","frontier":[["2023-12-13",117.0,"Gemini 1.0 Pro"],["2024-05-14",126.9,"Gemini 1.5 Pro (May 2024)"],["2024-09-24",131.7,"Gemini 1.5 Pro (Sept 2024)"],["2025-02-05",135.1,"Gemini 2.0 Pro"],["2025-03-31",144.2,"Gemini 2.5 Pro (Mar 2025)"],["2025-06-05",145.3,"Gemini 2.5 Pro (Jun 2025)"],["2025-11-18",152.9,"Gemini 3 Pro"],["2026-02-19",154.8,"Gemini 3.1 Pro"],["2026-08-13",157.3,"Gemini 3.7 Flash"]],"span_months":32.7},{"org":"xAI","n":10,"first":"2024-12-12","last":"2026-09-21","eci_first":130.5,"eci_last":153.5,"eci_best":156.4,"rate_all":14.19,"rate_post":14.19,"country":"United States of America","frontier":[["2024-12-12",130.5,"Grok-2 (Dec 2024)"],["2025-04-09",138.3,"Grok 3"],["2025-06-24",140.3,"Grok-3 mini"],["2025-07-09",146.4,"Grok 4"],["2026-02-17",152.0,"Grok 4.20"],["2026-07-08",153.9,"Grok 4.5"],["2026-08-12",156.4,"Grok 4.6"]],"span_months":21.3},{"org":"阿里通义","n":37,"first":"2023-09-24","last":"2026-09-01","eci_first":113.0,"eci_last":155.1,"eci_best":156.4,"rate_all":14.01,"rate_post":13.36,"country":"China","frontier":[["2023-09-24",113.0,"Qwen-14B"],["2024-06-07",125.3,"Qwen2-72B"],["2024-09-17",128.5,"Qwen2.5-32B"],["2024-09-19",129.0,"Qwen2.5-72B"],["2025-01-25",132.5,"Qwen2.5-Max"],["2025-03-05",137.6,"QwQ-32B"],["2025-04-28",139.3,"Qwen3-235B-A22B"],["2025-07-25",143.8,"Qwen3-235B-A22B-Thinking (Jul 2025)"],["2026-02-13",146.7,"Qwen3.5 397B-A17B"],["2026-02-16",146.8,"Qwen 3.5 Plus (hosted 397B-A17B)"],["2026-03-31",147.7,"Qwen 3.6 Plus"],["2026-04-20",149.2,"Qwen 3.6 Max (Preview)"],["2026-05-19",153.7,"Qwen3.7-Max"],["2026-08-02",156.4,"Qwen 3.8 Max"]],"span_months":35.2},{"org":"DeepSeek","n":16,"first":"2023-11-29","last":"2026-09-09","eci_first":110.5,"eci_last":154.9,"eci_best":155.3,"rate_all":14.77,"rate_post":11.74,"country":"China","frontier":[["2023-11-29",110.5,"DeepSeek LLM 67B"],["2024-05-07",124.8,"DeepSeek-V2 (MoE-236B, May 2024)"],["2024-12-26",132.3,"DeepSeek-V3"],["2025-01-20",139.0,"DeepSeek-R1"],["2025-05-28",141.3,"DeepSeek-R1 (May 2025)"],["2025-09-29",145.0,"DeepSeek-V3.2-Exp"],["2025-12-01",146.3,"DeepSeek-V3.2"],["2026-04-24",149.1,"DeepSeek-V4-Pro"],["2026-07-31",154.5,"DeepSeek V4 Flash 0731"],["2026-08-13",155.3,"DeepSeek V4 Pro 0813"]],"span_months":33.3},{"org":"Mistral AI","n":16,"first":"2023-09-27","last":"2026-04-28","eci_first":112.2,"eci_last":141.3,"eci_best":141.3,"rate_all":10.51,"rate_post":8.69,"country":"France","frontier":[["2023-09-27",112.2,"Mistral 7B v0.1"],["2023-12-11",118.5,"Mixtral 8x7B"],["2024-02-26",122.0,"Mistral Large"],["2024-04-17",122.0,"Mixtral 8x22B"],["2024-07-24",127.5,"Mistral Large 2 (Jul 2024)"],["2024-11-18",128.5,"Mistral Large 2 (Nov 2024)"],["2025-05-07",134.1,"Mistral Medium 3"],["2026-04-28",141.3,"Mistral Medium 3.5"]],"span_months":31.0}],"vendorCadence":{"qwen":{"2024":4,"2025":9,"2026":9},"openai":{"2025":47,"2026":28,"2024":16,"2023":3},"google":{"2025":5,"2026":17},"mistralai":{"2025":6,"2026":9,"2024":1},"anthropic":{"2026":13,"2025":6},"z-ai":{"2026":5,"2025":5},"deepseek":{"2024":1,"2025":1,"2026":4},"minimax":{"2025":2,"2026":2},"moonshotai":{"2026":4},"x-ai":{"2026":11}}};
+const tip = document.getElementById('tip');
+function showTip(e, html){ tip.innerHTML = html; tip.classList.add('on'); moveTip(e); }
+function moveTip(e){
+  const r = tip.getBoundingClientRect();
+  let x = e.clientX + 14, y = e.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+function hideTip(){ tip.classList.remove('on'); }
+function el(tag, attrs, text){
+  const n = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (text != null) n.textContent = text;
+  return n;
+}
+const fmt = v => (v >= 100 ? Math.round(v) : v >= 10 ? v.toFixed(1) : v >= 1 ? v.toFixed(2) : v.toFixed(3));
+const V = DATA.vendors;
+const fmtDate = d => d ? d.slice(0, 7) : '—';
+
+/* ---------------- 通用：纵坐标控件（刻度类型 + 上下限） ---------------- */
+const AX = {};
+function axState(id, init){
+  if (!AX[id]) AX[id] = Object.assign({scale:'lin', min:null, max:null}, init || {});
+  return AX[id];
+}
+function niceTicks(lo, hi, isLog){
+  if (!(hi > lo)) return [lo];
+  const out = [];
+  if (isLog) {
+    const a = Math.floor(Math.log10(lo)), b = Math.ceil(Math.log10(hi));
+    const mults = (b - a) <= 3 ? [1, 2, 5] : [1];
+    for (let e = a; e <= b; e++) for (const m of mults) {
+      const v = m * Math.pow(10, e);
+      if (v >= lo * 0.999 && v <= hi * 1.001) out.push(v);
+    }
+  } else {
+    const span = hi - lo;
+    if (span <= 0) return [lo];
+    const raw = span / 6, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const step = [1, 2, 2.5, 5, 10].map(x => x * mag).find(x => x >= raw) || 10 * mag;
+    for (let v = Math.ceil(lo / step) * step; v <= hi + step * 1e-6; v += step)
+      out.push(+v.toPrecision(12));
+  }
+  return out.length ? out : [lo, hi];
+}
+/* 把数值映射成 0~100 的百分比宽度，供 CSS 条形使用 */
+function barPct(v, st, autoMin, autoMax){
+  const isLog = st.scale === 'log';
+  const lo = st.min != null ? st.min : (isLog ? Math.max(autoMin || 1e-9, 1e-9) : 0);
+  const hi = st.max != null ? st.max : (autoMax || 1);
+  if (isLog) {
+    const a = Math.log10(Math.max(lo, 1e-9)), b = Math.log10(Math.max(hi, lo * 10));
+    return Math.max(0, Math.min(1.6, (Math.log10(Math.max(v, lo)) - a) / (b - a))) * 100;
+  }
+  const b = Math.max(hi, lo + 1e-9);
+  return Math.max(0, Math.min(1.6, (v - lo) / (b - lo))) * 100;
+}
+function axisControl(parent, state, onChange){
+  const wrap = document.createElement('span');
+  wrap.className = 'axwrap';
+  const seg = document.createElement('span');
+  seg.className = 'seg';
+  const mk = (val, label) => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = label; b.dataset.s = val;
+    if (val === state.scale) b.classList.add('on');
+    b.onclick = () => {
+      seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+      state.scale = val; onChange();
+    };
+    return b;
+  };
+  seg.appendChild(mk('log', '等比（对数）'));
+  seg.appendChild(mk('lin', '等差（线性）'));
+  wrap.appendChild(seg);
+  const mkNum = (key, ph) => {
+    const i = document.createElement('input');
+    i.type = 'number'; i.step = 'any'; i.placeholder = ph; i.className = 'axnum';
+    if (state[key] != null) i.value = state[key];
+    i.onchange = () => {
+      const t = i.value.trim();
+      const v = t === '' ? null : Number(t);
+      state[key] = (v === null || isNaN(v)) ? null : v;
+      if (state[key] === null) i.value = '';
+      onChange();
+    };
+    i.onkeydown = e => { if (e.key === 'Enter') i.blur(); };
+    return i;
+  };
+  const minI = mkNum('min', '自动'), maxI = mkNum('max', '自动');
+  const lb = t => { const x = document.createElement('span'); x.className = 'lbl'; x.textContent = t; return x; };
+  const reset = document.createElement('button');
+  reset.type = 'button'; reset.className = 'axreset'; reset.textContent = '自动';
+  reset.onclick = () => {
+    state.min = null; state.max = null; minI.value = ''; maxI.value = '';
+    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.s === state.scale));
+    onChange();
+  };
+  wrap.append(lb('最小'), minI, lb('最大'), maxI, reset);
+  parent.appendChild(wrap);
+  return wrap;
+}
+
+/* ---------------- 视图一：价格天梯 ---------------- */
+let ladderState = { q:'', metric:'i', order:'asc', on:new Set(Object.keys(V)) };
+function viewLadder(root){
+  const ms = DATA.models;
+  const card = document.createElement('div'); card.className = 'card';
+  card.innerHTML = `<h2>词元价格天梯 <span class="tag">socpk 式排行</span></h2>
+    <div class="desc">全部 ${ms.length} 个在售模型的输入价排行。点选厂商可筛选，点击表头可排序。</div>
+    <div class="ctrl">
+      <input type="search" id="q" placeholder="搜索模型名，如 qwen / kimi / gpt-5">
+      <span class="lbl">排序</span>
+      <select id="metric">
+        <option value="i">按输入价</option>
+        <option value="o">按输出价</option>
+        <option value="d">按发布日期</option>
+      </select>
+      <select id="order"><option value="asc">从低到高</option><option value="desc">从高到低</option></select>
+      <span class="lbl" id="cnt"></span>
+      <span class="lbl" id="ladscale"></span>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="scroll" style="margin-top:14px"><table>
+      <thead><tr><th style="width:46px">#</th><th>模型</th><th>厂商</th>
+      <th class="num" style="width:96px">输入价</th><th class="num" style="width:96px">输出价</th>
+      <th style="width:150px">相对价位</th><th style="width:78px">发布时间</th></tr></thead>
+      <tbody id="rows"></tbody></table></div>
+    <div class="src"><b>单位：</b>美元 / 百万词元　·　<b>来源：</b>LiteLLM 价格库（含厂商官方定价页链接）；发布日期取自 OpenRouter</div>`;
+  root.appendChild(card);
+
+  const chips = card.querySelector('#chips');
+  Object.entries(V).forEach(([k, [cn, c]]) => {
+    const b = document.createElement('span');
+    b.className = 'chip on'; b.dataset.v = k;
+    b.innerHTML = `<i style="background:${c}"></i>${cn}`;
+    b.onclick = () => { b.classList.toggle('on');
+      if (b.classList.contains('on')) ladderState.on.add(k); else ladderState.on.delete(k);
+      render(); };
+    chips.appendChild(b);
+  });
+  const q = card.querySelector('#q'), metric = card.querySelector('#metric'),
+        order = card.querySelector('#order');
+  q.oninput = () => { ladderState.q = q.value.trim().toLowerCase(); render(); };
+  metric.onchange = () => { ladderState.metric = metric.value;
+    ORDER[metric.value] = metric.value === 'd' ? 'desc' : 'asc';
+    order.value = ORDER[metric.value]; render(); };
+  order.onchange = () => { ladderState.order = order.value; render(); };
+  const ORDER = { i:'asc', o:'asc', d:'desc' };
+  card.querySelectorAll('th').forEach((th, idx) => {
+    if (![3,4,6].includes(idx)) return;
+    th.onclick = () => {
+      const map = {3:'i',4:'o',6:'d'};
+      ladderState.metric = map[idx];
+      ladderState.order = ladderState.order === 'asc' ? 'desc' : 'asc';
+      metric.value = map[idx]; order.value = ladderState.order; render();
+    };
+  });
+
+  const rowsEl = card.querySelector('#rows'), cntEl = card.querySelector('#cnt');
+  const sLad = axState('ladderBar', {scale:'log'});
+  function render(){
+    let list = ms.filter(m => ladderState.on.has(m.v));
+    if (ladderState.q) list = list.filter(m =>
+      m.n.toLowerCase().includes(ladderState.q) || V[m.v][0].toLowerCase().includes(ladderState.q));
+    const key = ladderState.metric, dir = ladderState.order === 'asc' ? 1 : -1;
+    list.sort((a, b) => {
+      let x = a[key], y = b[key];
+      if (key === 'd') { x = x || '0000'; y = y || '0000'; if (x < y) return -1*dir; if (x > y) return 1*dir; return 0; }
+      return (x - y) * dir;
+    });
+    cntEl.textContent = `共 ${list.length} 个模型`;
+    const html = list.map((m, idx) => {
+      const [cn, c] = V[m.v];
+      const w = barPct(m.i, sLad, 0.02, Math.max(160, ...ms.map(x => x.i)));
+      return `<tr>
+        <td class="num" style="color:#9aa5b4">${idx+1}</td>
+        <td style="font-weight:600">${m.n}</td>
+        <td><span class="dot" style="background:${c}"></span>${cn}</td>
+        <td class="num">${m.i > 0 ? (m.i < 0.01 ? m.i.toFixed(4) : fmt(m.i)) : "—"}</td>
+        <td class="num">${m.o > 0 ? (m.o < 0.01 ? m.o.toFixed(4) : fmt(m.o)) : "—"}</td>
+        <td><div style="height:9px;background:#eef1f6;border-radius:5px;overflow:hidden">
+          <div style="height:100%;width:${w.toFixed(1)}%;background:linear-gradient(90deg,${c}aa,${c});border-radius:5px"></div>
+        </div></td>
+        <td style="color:#8b96a5;font-size:12px">${fmtDate(m.d)}</td></tr>`;
+    }).join('');
+    rowsEl.innerHTML = html;
+  }
+  axisControl(card.querySelector('#ladscale'), sLad, render);
+  render();
+}
+
+/* ---------------- 视图二：价格时间轴 ---------------- */
+let tlState = { on:new Set(Object.keys(V)), from:'2022-09', to:'2026-10' };
+function viewTimeline(root){
+  const card = document.createElement('div'); card.className = 'card';
+  card.innerHTML = `<h2>主流模型的输入价格与发布时间 <span class="tag">交互散点</span></h2>
+    <div class="desc">每个点是一个模型。价格跨度达数千倍——<b>等比（对数）</b>能同时看清低端与高端，<b>等差（线性）</b>更能反映绝对差距。悬停查看详情。</div>
+    <div class="ctrl"><span class="lbl">时间范围</span>
+      <select id="from"></select><span class="lbl">—</span><select id="to"></select>
+      <span class="lbl" id="cnt"></span><span class="lbl" id="scalebox"></span></div>
+    <div class="chips" id="chips"></div>
+    <div id="chart" style="margin-top:16px"></div>
+    <div class="src"><b>单位：</b>美元 / 百万词元（输入价）　·　<b>提示：</b>只显示有确切发布日期的 244 个模型</div>`;
+  root.appendChild(card);
+
+  const dated = DATA.models.filter(m => m.d);
+  const months = [...new Set(dated.map(m => m.d.slice(0,7)))].sort();
+  const fs = card.querySelector('#from'), ts = card.querySelector('#to');
+  fs.innerHTML = months.map(m => `<option>${m}</option>`).join('');
+  ts.innerHTML = months.map(m => `<option>${m}</option>`).join('');
+  fs.value = months[0]; ts.value = months[months.length-1];
+  fs.onchange = () => { tlState.from = fs.value; draw(); };
+  ts.onchange = () => { tlState.to = ts.value; draw(); };
+
+  const chips = card.querySelector('#chips');
+  Object.entries(V).forEach(([k, [cn, c]]) => {
+    const b = document.createElement('span');
+    b.className = 'chip on';
+    b.innerHTML = `<i style="background:${c}"></i>${cn}`;
+    b.onclick = () => { b.classList.toggle('on');
+      if (b.classList.contains('on')) tlState.on.add(k); else tlState.on.delete(k);
+      draw(); };
+    chips.appendChild(b);
+  });
+  const cntEl = card.querySelector('#cnt');
+  const sTL = axState('timeline', {scale:'log'});
+  axisControl(card.querySelector('#scalebox'), sTL, draw);
+  function draw(){
+    const box = card.querySelector('#chart'); box.innerHTML = '';
+    const list = dated.filter(m => tlState.on.has(m.v) && m.d.slice(0,7) >= tlState.from && m.d.slice(0,7) <= tlState.to);
+    cntEl.textContent = `当前显示 ${list.length} 个模型`;
+    const W = 1160, H = 520, L = 62, R = 24, T = 16, B = 46;
+    const t0 = new Date(tlState.from + '-01').getTime(), t1 = new Date(tlState.to + '-28').getTime();
+    const svg = el('svg', {viewBox:`0 0 ${W} ${H}`});
+    const isLog = sTL.scale === 'log';
+    const autoMax = Math.max(160, ...list.map(m => m.i)) * 1.06;
+    const PMAX = sTL.max != null ? sTL.max : autoMax;
+    const PMIN = Math.max(sTL.min != null ? sTL.min : 0.02, 1e-9);
+    const lmin = Math.log10(PMIN), lmax = Math.log10(Math.max(PMAX, PMIN * 10));
+    const X = d => L + (d - t0) / (t1 - t0 || 1) * (W - L - R);
+    const Y = p => {
+      const t = isLog ? (lmax - Math.log10(Math.max(p, PMIN))) / (lmax - lmin)
+                      : (PMAX - p) / PMAX;
+      return T + t * (H - T - B);
+    };
+    const customTL = sTL.min != null || sTL.max != null;
+    const yticks = (customTL
+        ? niceTicks(PMIN, PMAX, isLog)
+        : (isLog ? [0.05,0.1,0.5,1,5,10,50,100] : [0,25,50,75,100,125,150]))
+      .filter(v => v >= PMIN * 0.999 && v <= PMAX * 1.001);
+    yticks.forEach(p => {
+      svg.appendChild(el('line', {class:'grid', x1:L, x2:W-R, y1:Y(p), y2:Y(p)}));
+      svg.appendChild(el('text', {class:'axis', x:L-8, y:Y(p)+4, 'text-anchor':'end'}, fmt(p)));
+    });
+    const d0 = new Date(tlState.from + '-01'), d1 = new Date(tlState.to + '-01');
+    // 按可用宽度自动抽稀月份标签，避免文字重叠
+    const totalM = (d1.getFullYear() - d0.getFullYear()) * 12 + (d1.getMonth() - d0.getMonth()) + 1;
+    const maxLabels = Math.max(3, Math.floor((W - L - R) / 84));
+    const stepM = Math.max(1, Math.ceil(totalM / maxLabels));
+    let mi = 0;
+    let cur = new Date(d0.getFullYear(), d0.getMonth(), 1);
+    while (cur <= d1) {
+      if (mi % stepM === 0 || mi === totalM - 1) {
+        const x = X(cur.getTime());
+        svg.appendChild(el('line', {class:'grid', x1:x, x2:x, y1:T, y2:H-B}));
+        svg.appendChild(el('text', {class:'axis', x:x, y:H-B+18, 'text-anchor':'middle'},
+          cur.getFullYear() + '.' + String(cur.getMonth()+1).padStart(2,'0')));
+      }
+      mi++;
+      cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+    }
+    svg.appendChild(el('text', {class:'axis', x:14, y:H/2, transform:`rotate(-90 14 ${H/2})`,
+      'text-anchor':'middle'},
+      '输入价（美元 / 百万词元）· ' + (isLog ? '等比' : '等差')));
+    list.forEach(m => {
+      const [cn, c] = V[m.v];
+      const x = X(new Date(m.d).getTime()), y = Y(m.i);
+      const g = el('g', {style:'cursor:pointer'});
+      g.appendChild(el('circle', {cx:x, cy:y, r:5.4, fill:c, 'fill-opacity':.82, stroke:'#fff','stroke-width':1}));
+      g.addEventListener('mouseenter', e => showTip(e,
+        `<b>${m.n}</b><br>厂商：${cn}<br>输入价：$${fmt(m.i)}<br>输出价：$${fmt(m.o)}<br>发布：${m.d}`));
+      g.addEventListener('mousemove', moveTip);
+      g.addEventListener('mouseleave', hideTip);
+      svg.appendChild(g);
+    });
+    box.appendChild(svg);
+  }
+  draw();
+}
+
+/* ---------------- 视图三：厂商价格区间 ---------------- */
+function viewVendors(root){
+  const agg = {};
+  DATA.models.forEach(m => { (agg[m.v] = agg[m.v] || []).push(m.i); });
+  const rows = Object.entries(agg).map(([k, a]) => {
+    a.sort((x,y)=>x-y);
+    return {k, cn:V[k][0], c:V[k][1], n:a.length, lo:a[0], hi:a[a.length-1],
+            mid:a[Math.floor(a.length/2)]};
+  }).sort((a,b)=>b.hi-a.hi);
+  const card = document.createElement('div'); card.className = 'card';
+  card.innerHTML = `<h2>各厂商模型价格区间 <span class="tag">横向区间条</span></h2>
+    <div class="desc">横条自该厂商最低价延伸至最高价，白点为中位数。</div>
+    <div class="ctrl" id="ctrl"></div>
+    <div id="bars"></div>
+    <div class="src"><b>说明：</b>括号内为该厂商在售模型数；同一厂商内价格跨度越大，说明其产品线分层越明显。</div>`;
+  root.appendChild(card);
+  const sV = axState('vendors', {scale:'log'});
+  const draw = () => {
+    const box = card.querySelector('#bars'); box.innerHTML = '';
+    const autoMin = Math.min(...rows.map(r => r.lo));
+    const autoMax = Math.max(...rows.map(r => r.hi));
+    rows.forEach(r => {
+      const w  = barPct(r.hi,  sV, autoMin, autoMax);
+      const s0 = barPct(r.lo,  sV, autoMin, autoMax);
+      const mp = barPct(r.mid, sV, autoMin, autoMax);
+      const d = document.createElement('div');
+      d.style.cssText = 'display:grid;grid-template-columns:150px 1fr 150px;align-items:center;gap:12px;padding:6px 0';
+      d.innerHTML = `<div style="font-size:13px;font-weight:600">${r.cn}
+          <span style="color:#9aa5b4;font-weight:400">（${r.n}）</span></div>
+        <div style="position:relative;height:26px">
+          <div style="position:absolute;left:${s0}%;width:${Math.max(w-s0,0.6)}%;top:8px;height:10px;
+            border-radius:6px;background:${r.c};opacity:.9"></div>
+          <div style="position:absolute;left:calc(${mp}% - 5px);top:5px;width:10px;height:16px;
+            border-radius:4px;background:#fff;border:2.5px solid ${r.c}"></div>
+        </div>
+        <div class="num" style="font-size:12.5px;color:#5b6676;text-align:right">
+          $${fmt(r.lo)} – $${fmt(r.hi)}</div>`;
+      box.appendChild(d);
+    });
+  };
+  axisControl(card.querySelector('#ctrl'), sV, draw);
+  draw();
+}
+
+/* ---------------- 通用：柱状 / 折线 ---------------- */
+function barChart(box, rows, opt){
+  box.innerHTML = '';
+  const W = 1160, H = opt.h || 420, L = 68, R = 30, T = 24, B = 54;
+  const svg = el('svg', {viewBox:`0 0 ${W} ${H}`});
+  const vals = rows.map(r => r[1]);
+  const isLog = !!opt.log;
+  const dmax = Math.max(...vals);
+  const dminRaw = isLog ? Math.min(...vals.filter(v => v > 0)) : 0;
+  const dmin = isLog ? Math.pow(10, Math.floor(Math.log10(dminRaw))) : 0;   // 对数基线取整十次幂，避免最矮的柱不可见
+  const lo = isLog ? Math.max(opt.ymin != null ? opt.ymin : dmin, 1e-9)
+                   : (opt.ymin != null ? opt.ymin : 0);
+  const hi = opt.ymax != null ? opt.ymax : dmax * (isLog ? 1 : 1.06);
+  const tOf = v => isLog
+      ? (Math.log10(hi) - Math.log10(Math.max(v, lo))) / (Math.log10(hi) - Math.log10(lo) || 1)
+      : (hi - v) / (hi - lo || 1);
+  const Y = v => T + Math.max(-0.6, Math.min(1.6, tOf(v))) * (H - T - B);
+  const bw = (W - L - R) / rows.length * 0.62;
+  const custom = opt.ymin != null || opt.ymax != null;
+  const grid = custom ? niceTicks(lo, hi, isLog) : (opt.grid || niceTicks(lo, hi, isLog));
+  grid.filter(g => g >= lo * 0.999 && g <= hi * 1.001).forEach(g => {
+    const y = Y(g);
+    svg.appendChild(el('line', {class:'grid', x1:L, x2:W-R, y1:y, y2:y}));
+    svg.appendChild(el('text', {class:'axis', x:L-8, y:y+4, 'text-anchor':'end'}, fmt(g)));
+  });
+  rows.forEach((r, i) => {
+    const cx = L + (i + 0.5) * (W - L - R) / rows.length;
+    const y = Y(r[1]), h = H - B - y;
+    const g = el('g', {style:'cursor:pointer'});
+    const c = r[2] || '#2E75B6';
+    g.appendChild(el('rect', {x:cx-bw/2, y:y, width:bw, height:Math.max(h,1), rx:5, fill:c}));
+    g.appendChild(el('text', {x:cx, y:y-9, 'text-anchor':'middle',
+      style:'font-size:12.5px;font-weight:700;fill:#1b2330'}, opt.label ? opt.label(r[1]) : fmt(r[1])));
+    g.appendChild(el('text', {class:'axis', x:cx, y:H-B+20, 'text-anchor':'middle'}, r[0]));
+    const tipHtml = opt.tip ? opt.tip(r) : `<b>${r[0]}</b><br>${r[1]}`;
+    g.addEventListener('mouseenter', e => showTip(e, tipHtml));
+    g.addEventListener('mousemove', moveTip);
+    g.addEventListener('mouseleave', hideTip);
+    svg.appendChild(g);
+  });
+  if (opt.ylabel) svg.appendChild(el('text', {class:'axis', x:16, y:H/2,
+    transform:`rotate(-90 16 ${H/2})`, 'text-anchor':'middle'}, opt.ylabel));
+  box.appendChild(svg);
+}
+
+function lineChart(box, series, opt){
+  box.innerHTML = '';
+  const W = 1160, H = opt.h || 470, L = 66, R = 130, T = 20, B = 46;
+  const svg = el('svg', {viewBox:`0 0 ${W} ${H}`});
+  const all = series.flatMap(s => s.data.map(d => d[1]));
+  const isLog = !!opt.log;
+  const dmax = Math.max(...all), dmin = Math.min(...all);
+  const lo = isLog ? Math.max(opt.ymin != null ? opt.ymin : dmin, 1e-9)
+                   : (opt.ymin != null ? opt.ymin : 0);
+  const hi = opt.ymax != null ? opt.ymax : dmax * 1.04;
+  const n = series[0].data.length;
+  const X = i => L + i / (n - 1) * (W - L - R);
+  const Y = v => {
+    const t = isLog ? (Math.log10(hi) - Math.log10(Math.max(v, lo))) / (Math.log10(hi) - Math.log10(lo) || 1)
+                    : (hi - v) / (hi - lo || 1);
+    return T + Math.max(-0.6, Math.min(1.6, t)) * (H - T - B);
+  };
+  const custom = opt.ymin != null || opt.ymax != null;
+  const grid = custom ? niceTicks(lo, hi, isLog) : (opt.grid || niceTicks(lo, hi, isLog));
+  grid.filter(g => g >= lo * 0.999 && g <= hi * 1.001).forEach(g => {
+    const y = Y(g);
+    svg.appendChild(el('line', {class:'grid', x1:L, x2:W-R, y1:y, y2:y}));
+    svg.appendChild(el('text', {class:'axis', x:L-8, y:y+4, 'text-anchor':'end'}, fmt(g)));
+  });
+  const step = Math.ceil(n / 12);
+  series[0].data.forEach((d, i) => {
+    if (i % step) return;
+    svg.appendChild(el('text', {class:'axis', x:X(i), y:H-B+20, 'text-anchor':'middle'}, d[0]));
+  });
+  series.forEach(s => {
+    const pts = s.data.map((d, i) => X(i) + ',' + Y(d[1])).join(' ');
+    svg.appendChild(el('polyline', {points:pts, fill:'none', stroke:s.color,
+      'stroke-width':s.w || 2.2, 'stroke-linejoin':'round'}));
+    s.data.forEach((d, i) => {
+      const g = el('g', {style:'cursor:pointer'});
+      g.appendChild(el('circle', {cx:X(i), cy:Y(d[1]), r:8, fill:'transparent'}));
+      g.addEventListener('mouseenter', e => showTip(e, `<b>${s.name}</b><br>${d[0]}：${opt.valTip ? opt.valTip(d[1]) : d[1]}`));
+      g.addEventListener('mousemove', moveTip);
+      g.addEventListener('mouseleave', hideTip);
+      svg.appendChild(g);
+    });
+    const last = s.data[s.data.length-1];
+    svg.appendChild(el('text', {class:'axis', x:W-R+8, y:Y(last[1])+4,
+      style:`fill:${s.color};font-size:12px;font-weight:600`}, s.name));
+  });
+  box.appendChild(svg);
+}
+
+/* ---------------- 视图四~八 ---------------- */
+function viewEnergy(root){
+  const c1 = document.createElement('div'); c1.className = 'card';
+  c1.innerHTML = `<h2>全球数据中心用电量</h2>
+    <div class="desc">2010→2018 仅增长约 6%（数据中心效率提升抵消了流量增长），此后五年增长 50–80%。</div>
+    <div class="kpi">
+      <div><div class="v">194 → 205</div><div class="k">TWh｜2010 → 2018</div></div>
+      <div><div class="v">340</div><div class="k">TWh｜2023（区间 300–380）</div></div>
+      <div><div class="v">485</div><div class="k">TWh｜2025（同比 +17%）</div></div>
+      <div><div class="v">950</div><div class="k">TWh｜2030 预测</div></div>
+    </div><div class="ctrl" id="ctrl"></div><div id="g"></div>
+    <div class="src"><b>来源：</b>IEA-4E《Data Centre Energy Use》(2025-05)、Masanet et al. (2020) Science、IEA《Electricity 2025》/<b>Key Questions on Energy and AI</b>(2026)</div>`;
+  root.appendChild(c1);
+  const rows = DATA.series.energyGlobal.map(r => [r[0], r[1], r[0]==='2023' ? '#C00000' : (r[0]==='2030E' ? '#B9C8E4' : '#2E75B6')]);
+  const sE1 = axState('energyGlobal');
+  const dE1 = () => barChart(c1.querySelector('#g'), rows,
+    {ylabel:'用电量（TWh）', grid:[0,200,400,600,800,1000], log:sE1.scale==='log',
+     ymin:sE1.min, ymax:sE1.max, tip:r=>`<b>${r[0]}</b><br>${r[1]} TWh`, label:v=>v});
+  axisControl(c1.querySelector('#ctrl'), sE1, dE1); dE1();
+
+  const c2 = document.createElement('div'); c2.className = 'card';
+  c2.innerHTML = `<h2>中国数据中心用电量</h2>
+    <div class="desc">2024 年占全社会用电 1.68%，同比 +10.7%。注意 2017–2018 与 2022–2024 出自不同机构口径。</div>
+    <div class="ctrl" id="ctrl2"></div><div id="g2"></div>
+    <div class="src"><b>来源：</b>中国信通院《绿色算力发展研究报告（2025）》、中国电子技术标准化研究院、绿色和平 × 华北电力大学</div>`;
+  root.appendChild(c2);
+  const sE2 = axState('energyCN');
+  const dE2 = () => barChart(c2.querySelector('#g2'),
+    DATA.series.energyCN.map(r=>[r[0], r[1], r[0]==='2030E'?'#B9C8E4':'#2E75B6']),
+    {h:400, ylabel:'用电量（亿千瓦时）', grid:[0,1000,2000,3000,4000,5000], log:sE2.scale==='log',
+     ymin:sE2.min, ymax:sE2.max, label:v=>v, tip:r=>`<b>${r[0]}</b><br>${r[1]} 亿千瓦时`});
+  axisControl(c2.querySelector('#ctrl2'), sE2, dE2); dE2();
+}
+
+function viewCount(root){
+  const c1 = document.createElement('div'); c1.className = 'card';
+  c1.innerHTML = `<h2>全球超大规模数据中心数量</h2>
+    <div class="desc">Synergy Research Group 统计的 21 家头部云与互联网企业站点数。</div>
+    <div class="ctrl" id="ctrl"></div><div id="g"></div>
+    <div class="src"><b>来源：</b>Synergy Research Group 官方新闻稿（2025-12-19）及历年数据。<b>注：</b>2026.08 另有"在建管道 915 个"，与已运营总数口径不同，未并入本图。</div>`;
+  root.appendChild(c1);
+  const sC1 = axState('hyperscale');
+  const dC1 = () => barChart(c1.querySelector('#g'),
+    DATA.series.hyperscale.map((r,i)=>[r[0], r[1], i>=6?'#1F3864':'#2E75B6']),
+    {h:420, ylabel:'数量（个）', grid:[0,300,600,900,1200,1500], log:sC1.scale==='log',
+     ymin:sC1.min, ymax:sC1.max, label:v=>v, tip:r=>`<b>${r[0]}</b><br>${r[1]} 个`});
+  axisControl(c1.querySelector('#ctrl'), sC1, dC1); dC1();
+
+  const c2 = document.createElement('div'); c2.className = 'card';
+  c2.innerHTML = `<h2>中国在用标准机架数</h2>
+    <div class="desc">1 标准机架 = 2.5kW 折算，非物理机柜数。</div>
+    <div class="ctrl" id="ctrl2"></div><div id="g2"></div>
+    <div class="src"><b>来源：</b>中国信通院、工信部、中商产业研究院</div>`;
+  root.appendChild(c2);
+  const sC2 = axState('racks');
+  const dC2 = () => barChart(c2.querySelector('#g2'),
+    DATA.series.racks.map(r=>[r[0], r[1], r[0]==='2025E'?'#B9C8E4':'#2E75B6']),
+    {h:400, ylabel:'机架数（万架）', grid:[0,250,500,750,1000], log:sC2.scale==='log',
+     ymin:sC2.min, ymax:sC2.max, label:v=>v, tip:r=>`<b>${r[0]}</b><br>${r[1]} 万架`});
+  axisControl(c2.querySelector('#ctrl2'), sC2, dC2); dC2();
+}
+
+function viewCompute(root){
+  const c1 = document.createElement('div'); c1.className = 'card';
+  c1.innerHTML = `<h2>英伟达数据中心业务收入</h2>
+    <div class="desc">FY27 Q1/Q2 即 2026 年 2–7 月，同比分别 +92% 与 +117%。</div>
+    <div class="kpi">
+      <div><div class="v">$193.7B</div><div class="k">FY2026 全年（+68%）</div></div>
+      <div><div class="v">$75.2B</div><div class="k">FY27 Q1（+92%）</div></div>
+      <div><div class="v">$89.0B</div><div class="k">FY27 Q2（+117%）</div></div>
+      <div><div class="v">$108B</div><div class="k">FY27 Q3 指引</div></div>
+    </div><div class="ctrl" id="ctrl"></div><div id="g"></div>
+    <div class="src"><b>来源：</b>英伟达官方财报与 FY2027 Q1/Q2 新闻稿。<b>注：</b>财年结束于次年 1 月。</div>`;
+  root.appendChild(c1);
+  const sN = axState('nvidia');
+  const dN = () => barChart(c1.querySelector('#g'),
+    DATA.series.nvidia.map((r,i)=>[r[0], r[1], i>=6?'#C00000':(i>=4?'#1F3864':'#2E75B6')]),
+    {h:420, ylabel:'收入（十亿美元）', grid:[0,50,100,150,200], log:sN.scale==='log',
+     ymin:sN.min, ymax:sN.max, label:v=>v.toFixed(1),
+     tip:r=>`<b>${r[0]}</b><br>${r[1]} 十亿美元`});
+  axisControl(c1.querySelector('#ctrl'), sN, dN); dN();
+
+  const c2 = document.createElement('div'); c2.className = 'card';
+  c2.innerHTML = `<h2>2026 年云厂商资本开支指引</h2>
+    <div class="desc">九大 CSP 合计约 8,300 亿美元，同比 +79%。</div>
+    <div class="ctrl" id="ctrl2"></div><div id="g2"></div>
+    <div class="src"><b>来源：</b>TrendForce（2026-05-06），经 Evertiq 转载</div>`;
+  root.appendChild(c2);
+  const sCap = axState('capex');
+  const dCap = () => {
+    const box = c2.querySelector('#g2'); box.innerHTML = '';
+    const autoMax = Math.max(...DATA.series.capex.map(r => r[2]));
+    DATA.series.capex.forEach(r => {
+      const d = document.createElement('div');
+      d.style.cssText = 'display:grid;grid-template-columns:90px 1fr 120px;align-items:center;gap:12px;padding:7px 0';
+      const w = barPct(r[2], sCap, 0, autoMax), wl = barPct(r[1], sCap, 0, autoMax);
+      d.innerHTML = `<div style="font-weight:600">${r[0]}</div>
+        <div style="position:relative;height:22px;background:#f2f5fa;border-radius:6px;overflow:hidden">
+          <div style="position:absolute;left:0;width:${w}%;height:100%;background:#B9C8E4;border-radius:6px"></div>
+          <div style="position:absolute;left:0;width:${wl}%;height:100%;background:#1F3864;border-radius:6px"></div>
+        </div>
+        <div class="num" style="text-align:right;font-size:13px;font-weight:600">
+          $${r[1]}${r[2]!==r[1]?'–'+r[2]:''}B</div>`;
+      box.appendChild(d);
+    });
+  };
+  axisControl(c2.querySelector('#ctrl2'), sCap, dCap); dCap();
+}
+
+function viewTokens(root){
+  const c1 = document.createElement('div'); c1.className = 'card';
+  c1.innerHTML = `<h2>中国日均词元调用量</h2>
+    <div class="desc">两年增长超千倍。</div>
+    <div class="ctrl" id="ctrl1"></div>
+    <div class="kpi">
+      <div><div class="v">0.1 → 500</div><div class="k">万亿词元/天｜2024 初 → 2026.06</div></div>
+      <div><div class="v">140</div><div class="k">万亿/天｜2026.03</div></div>
+      <div><div class="v">500</div><div class="k">万亿/天｜2026.06</div></div>
+    </div><div id="g"></div>
+    <div class="src"><b>来源：</b>国家数据局口径，经光明网/人民日报（2026-03-24）、新华网（2026-04-01）、北京市政府（2026-10-08）披露</div>`;
+  root.appendChild(c1);
+  const sT1 = axState('tokensCN', {scale:'log'});
+  const draw1 = () => barChart(c1.querySelector('#g'),
+    DATA.series.tokensCN.map((r,i)=>[r[0], r[1], i===3?'#C00000':(i===2?'#1F3864':'#2E75B6')]),
+    {h:420, log: sT1.scale === 'log',
+     grid: sT1.scale === 'log' ? [0.1,1,10,100] : [0,100,200,300,400,500],
+     ymin:sT1.min, ymax:sT1.max,
+     label:v=>(v<1?v.toFixed(1):v)+' 万亿',
+     tip:r=>`<b>${r[0]}</b><br>${r[1]} 万亿词元/天`});
+  axisControl(c1.querySelector('#ctrl1'), sT1, draw1);
+  draw1();
+
+  const c2 = document.createElement('div'); c2.className = 'card';
+  c2.innerHTML = `<h2>谷歌月度 Token 处理量</h2>
+    <div class="desc">2026 年 5 月达 3,200 万亿，一年约增 7 倍。</div>
+    <div class="ctrl" id="ctrl2"></div><div id="g2"></div>
+    <div class="src"><b>来源：</b>谷歌 I/O 2026 皮柴公开发言（多家媒体转载）；2024-05 与 2025-10 数据来自大赛参赛手册</div>`;
+  root.appendChild(c2);
+  const sT2 = axState('tokensGoogle', {scale:'log'});
+  const draw2 = () => barChart(c2.querySelector('#g2'),
+    DATA.series.tokensGoogle.map((r,i)=>[r[0], r[1], i===2?'#C00000':'#2E75B6']),
+    {h:400, log: sT2.scale === 'log',
+     grid: sT2.scale === 'log' ? [10,100,1000,10000] : [0,800,1600,2400,3200],
+     ymin:sT2.min, ymax:sT2.max,
+     label:v=>v+' 万亿',
+     tip:r=>`<b>${r[0]}</b><br>${r[1]} 万亿词元/月`});
+  axisControl(c2.querySelector('#ctrl2'), sT2, draw2);
+  draw2();
+
+  const c3 = document.createElement('div'); c3.className = 'card';
+  c3.innerHTML = `<h2>中国智能算力规模</h2>
+    <div class="desc">2023→2025 增长 3.8 倍。2023/2024 为 IDC 口径，2025 为工信部口径。</div>
+    <div class="ctrl" id="ctrl3"></div><div id="g3"></div>
+    <div class="src"><b>来源：</b>IDC × 浪潮信息；工信部（2026-01-21 国新办发布会）</div>`;
+  root.appendChild(c3);
+  const sT3 = axState('computeCN');
+  const draw3 = () => barChart(c3.querySelector('#g3'),
+    DATA.series.computeCN.map((r,i)=>[r[0], r[1], i===2?'#1F3864':'#2E75B6']),
+    {h:400, ylabel:'智能算力（EFLOPS）', grid:[0,400,800,1200,1600], log:sT3.scale==='log',
+     ymin:sT3.min, ymax:sT3.max, label:v=>fmt(v),
+     tip:r=>`<b>${r[0]}</b><br>${r[1]} EFLOPS`});
+  axisControl(c3.querySelector('#ctrl3'), sT3, draw3);
+  draw3();
+}
+
+function viewStocks(root){
+  const card = document.createElement('div'); card.className = 'card';
+  card.innerHTML = `<h2>主流 AI 公司股价走势 <span class="tag">归一化对比</span></h2>
+    <div class="desc">美国公司以 2016-10 = 100；中国公司以 2023-01 = 100。已复权。点击图例可隐藏/显示。</div>
+    <div class="ctrl">
+      <select id="mkt"><option value="us">美股（2016-10 起）</option><option value="cn">A 股（2023-01 起）</option></select>
+      <span class="lbl" id="cnt"></span><span class="lbl" id="scalebox2"></span>
+    </div><div id="chart"></div>
+    <div class="legend" id="lg"></div>
+    <div class="src"><b>来源：</b>纳斯达克官方历史行情接口（美股，日线复权后取月收盘）；东方财富行情接口（A 股，前复权月 K）</div>`;
+  root.appendChild(card);
+  const mkt = card.querySelector('#mkt');
+  let hidden = new Set();
+  const sSt = axState('stocks', {scale:'log'});
+  const PAL = ['#1F3864','#C00000','#ED7D31','#548235','#7030A0','#0E9AA7','#BF9000','#2E75B6','#7F7F7F'];
+  function draw(){
+    const box = card.querySelector('#chart'); box.innerHTML = '';
+    const lg = card.querySelector('#lg'); lg.innerHTML = '';
+    const isUS = mkt.value === 'us';
+    const src = isUS ? DATA.series.usStocks : DATA.series.cnStocks;
+    const names = isUS ? DATA.series.usNames : null;
+    const keys = Object.keys(src);
+    const series = keys.map((k, idx) => {
+      const data = src[k];
+      const base = data[0][1];
+      const nm = isUS ? (names[k] || k).split(' ')[0] : k;
+      return {name:nm, color:PAL[idx % PAL.length], w: 2.6,
+              data: data.map(d => [d[0], +(d[1] / base * 100).toFixed(1)])};
+    }).filter(s => !hidden.has(s.name));
+    card.querySelector('#cnt').textContent = `共 ${keys.length} 条序列`;
+    lineChart(box, series, {log: sSt.scale === 'log', h:490, valTip:v=>v.toFixed(0),
+      ymin:sSt.min, ymax:sSt.max,
+      grid: sSt.scale === 'log' ? [20,50,100,200,500,1000,2000,5000,10000]
+                                : [0,500,1000,1500,2000,2500,3000]});
+    keys.forEach((k, idx) => {
+      const nm = isUS ? (names[k] || k).split(' ')[0] : k;
+      const s = document.createElement('span');
+      if (hidden.has(nm)) s.className = 'off';
+      s.innerHTML = `<i style="background:${PAL[idx % PAL.length]}"></i>${nm}`;
+      s.onclick = () => { hidden.has(nm) ? hidden.delete(nm) : hidden.add(nm); draw(); };
+      lg.appendChild(s);
+    });
+  }
+  mkt.onchange = () => { hidden = new Set(); draw(); };
+  axisControl(card.querySelector('#scalebox2'), sSt, draw);
+  draw();
+}
+
+/* ---------------- 视图：公司发展速率 ---------------- */
+const ORG_COLORS = ['#1F3864','#C00000','#2E75B6','#ED7D31','#548235','#7030A0',
+                    '#0E9AA7','#BF9000','#7F7F7F','#79A857','#E8A33D'];
+let orgHidden = new Set();
+function viewOrgs(root){
+  const list = (DATA.orgRates || []).slice()
+      .sort((a,b) => (b.rate_post ?? -99) - (a.rate_post ?? -99));
+  const card = document.createElement('div'); card.className = 'card';
+  card.innerHTML = `<h2>各公司模型发展速率 <span class="tag">ECI 口径</span></h2>
+    <div class="desc">把每家公司历代<strong>最强</strong>模型的 ECI 连成前沿曲线再线性拟合，斜率即「每年提升多少 ECI 点」。
+      深色条为推理模型期（2024-09 起），浅色条为全期。条长按最大值等比绘制。</div>
+    <div id="bars" style="margin-bottom:6px"></div>
+    <div class="src" id="note"></div>`;
+  root.appendChild(card);
+
+  const mx = Math.max(...list.map(o => Math.max(o.rate_post || 0, o.rate_all || 0)), 1);
+  const box = card.querySelector('#bars');
+  list.forEach(o => {
+    const rp = o.rate_post, ra = o.rate_all;
+    const d = document.createElement('div');
+    d.style.cssText = 'display:grid;grid-template-columns:150px 1fr 150px;align-items:center;gap:12px;padding:5px 0';
+    const wp = rp != null ? Math.max(rp / mx * 100, 0.8) : 0;
+    const wa = ra != null ? Math.max(ra / mx * 100, 0.8) : 0;
+    d.innerHTML = `<div style="font-size:13px;font-weight:600">${o.org}
+        <span style="color:#9aa5b4;font-weight:400">（${o.n}）</span></div>
+      <div style="position:relative;height:26px">
+        <div style="position:absolute;left:0;width:${wa}%;top:4px;height:8px;border-radius:4px;
+          background:#C7D5E8"></div>
+        <div style="position:absolute;left:0;width:${wp}%;top:14px;height:9px;border-radius:4px;
+          background:linear-gradient(90deg,#1F3864,#2E75B6)"></div>
+      </div>
+      <div style="text-align:right;font-size:12.5px;color:#5b6676">
+        <b style="color:#1F3864;font-size:14px">${rp != null ? rp.toFixed(1) : '—'}</b> 点/年
+        <span style="color:#9aa5b4">（全期 ${ra != null ? ra.toFixed(1) : '—'}）</span></div>`;
+    box.appendChild(d);
+  });
+  card.querySelector('#note').innerHTML =
+    `<b>口径：</b>Epoch AI Capabilities Index，274 个模型，2023-02 至 2026-09；` +
+    `前沿包络取历史最高分。括号内为该公司的模型数。<b>注意：</b>斜率对样本区间敏感，` +
+    `模型数少或时间跨度短的公司（如智谱 GLM、Moonshot）外推误差较大。`;
+
+  // 前沿曲线对比
+  const c2 = document.createElement('div'); c2.className = 'card';
+  c2.innerHTML = `<h2>各公司前沿 ECI 曲线 <span class="tag">点击图例可隐藏</span></h2>
+    <div class="desc">每家公司的历史最高 ECI 随时间的推进。曲线越陡，迭代越快；曲线越高，当前能力越强。</div>
+    <div class="ctrl" id="ctrl0"></div>
+    <div id="chart"></div><div class="legend" id="lg"></div>`;
+  root.appendChild(c2);
+  const box2 = c2.querySelector('#chart'), lg = c2.querySelector('#lg');
+  const sOr = axState('orgFrontier', {scale:'lin', min:90, max:175});
+
+  function draw(){
+    box2.innerHTML = ''; lg.innerHTML = '';
+    const W = 1160, H = 520, L = 62, R = 128, T = 16, B = 44;
+    const t0 = new Date('2023-01-01').getTime(), t1 = new Date('2026-11-01').getTime();
+    const svg = el('svg', {viewBox:`0 0 ${W} ${H}`});
+    const isLog = sOr.scale === 'log';
+    const yLo = sOr.min != null ? sOr.min : 90;
+    const yHi = sOr.max != null ? sOr.max : 175;
+    const l0 = Math.log10(Math.max(yLo, 1)), l1 = Math.log10(Math.max(yHi, 1));
+    const X = ms => L + (ms - t0) / (t1 - t0) * (W - L - R);
+    const Y = v => {
+      const t = isLog ? (l1 - Math.log10(Math.max(v, Math.max(yLo, 1)))) / (l1 - l0 || 1)
+                      : (yHi - v) / (yHi - yLo || 1);
+      return T + Math.max(-0.6, Math.min(1.6, t)) * (H - T - B);
+    };
+    niceTicks(yLo, yHi, isLog).forEach(v => {
+      svg.appendChild(el('line', {class:'grid', x1:L, x2:W-R, y1:Y(v), y2:Y(v)}));
+      svg.appendChild(el('text', {class:'axis', x:L-8, y:Y(v)+4, 'text-anchor':'end'},
+        isLog ? fmt(v) : Math.round(v)));
+    });
+    const d0 = new Date('2023-01-01'), d1 = new Date('2026-11-01');
+    const totalM = (d1.getFullYear()-d0.getFullYear())*12 + (d1.getMonth()-d0.getMonth()) + 1;
+    const stepM = Math.max(1, Math.ceil(totalM / Math.max(3, Math.floor((W-L-R)/84))));
+    let mi = 0, cur = new Date(2023, 0, 1);
+    while (cur <= d1) {
+      if (mi % stepM === 0) {
+        const x = X(cur.getTime());
+        svg.appendChild(el('line', {class:'grid', x1:x, x2:x, y1:T, y2:H-B}));
+        svg.appendChild(el('text', {class:'axis', x:x, y:H-B+18, 'text-anchor':'middle'},
+          cur.getFullYear() + '.' + String(cur.getMonth()+1).padStart(2,'0')));
+      }
+      mi++; cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
+    }
+    list.forEach((o, idx) => {
+      if (orgHidden.has(o.org)) return;
+      const c = ORG_COLORS[idx % ORG_COLORS.length];
+      const pts = o.frontier.map(p => X(new Date(p[0]).getTime()) + ',' + Y(p[1])).join(' ');
+      svg.appendChild(el('polyline', {points:pts, fill:'none', stroke:c,
+        'stroke-width':2.4, 'stroke-linejoin':'round'}));
+      o.frontier.forEach(p => {
+        const g = el('g', {style:'cursor:pointer'});
+        g.appendChild(el('circle', {cx:X(new Date(p[0]).getTime()), cy:Y(p[1]),
+          r:5, fill:c, 'fill-opacity':.8, stroke:'#fff', 'stroke-width':1}));
+        g.addEventListener('mouseenter', e => showTip(e,
+          `<b>${o.org}</b><br>${p[2]}<br>ECI ${p[1]}<br>${p[0]}`));
+        g.addEventListener('mousemove', moveTip);
+        g.addEventListener('mouseleave', hideTip);
+        svg.appendChild(g);
+      });
+      const last = o.frontier[o.frontier.length-1];
+      svg.appendChild(el('text', {class:'axis', x:W-R+8, y:Y(last[1])+4,
+        style:`fill:${c};font-size:11.5px;font-weight:600`}, o.org));
+    });
+    box2.appendChild(svg);
+    list.forEach((o, idx) => {
+      const s = document.createElement('span');
+      const c = ORG_COLORS[idx % ORG_COLORS.length];
+      if (orgHidden.has(o.org)) s.className = 'off';
+      s.innerHTML = `<i style="background:${c}"></i>${o.org}`;
+      s.onclick = () => { orgHidden.has(o.org) ? orgHidden.delete(o.org) : orgHidden.add(o.org); draw(); };
+      lg.appendChild(s);
+    });
+  }
+  axisControl(c2.querySelector('#ctrl0'), sOr, draw);
+  draw();
+}
+
+/* ---------------- 路由 ---------------- */
+const TABS = [
+  ['ladder', '词元价格天梯', viewLadder],
+  ['timeline', '价格时间轴', viewTimeline],
+  ['vendors', '厂商价格区间', viewVendors],
+  ['orgs', '公司发展速率', viewOrgs],
+  ['energy', '数据中心用电', viewEnergy],
+  ['count', '数据中心数量', viewCount],
+  ['compute', '算力与资本开支', viewCompute],
+  ['tokens', '词元消耗量', viewTokens],
+  ['stocks', '股价走势', viewStocks],
+];
+const nav = document.getElementById('nav'), view = document.getElementById('view');
+TABS.forEach(([id, label], i) => {
+  const b = document.createElement('button');
+  b.textContent = label; b.dataset.id = id;
+  b.onclick = () => { location.hash = id; };
+  nav.appendChild(b);
+});
+function route(){
+  const id = (location.hash || '#ladder').slice(1);
+  const t = TABS.find(x => x[0] === id) || TABS[0];
+  nav.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.id === t[0]));
+  view.innerHTML = '';
+  t[2](view);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>
