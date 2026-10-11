@@ -4,7 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI 与词元经济数据看板</title>
-<meta name="description" content="Token 经济数据看板：11 个分栏，含词元价格天梯、模型发展速率、单位算力价值阶梯与 42 条数据信源。">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="description" content="Token 经济数据看板：词元价格天梯、模型发展速率、单位算力价值阶梯与 42 条数据信源。">
 <meta property="og:title" content="AI 与词元经济数据看板">
 <meta property="og:description" content="算力 · 能耗 · 词元价格 · 资本市场；可切换等比/等差纵坐标、自由设定范围。">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23165DFF'/%3E%3Ctext x='16' y='23' font-size='19' font-family='sans-serif' font-weight='bold' fill='white' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E">
@@ -87,6 +90,15 @@ tbody tr:hover{background:#f7faff}
   border-bottom:1px solid var(--line)}
 .formula{background:#0b2545;color:#fff;padding:13px 18px;border-radius:10px;font-size:14px;
   text-align:center;letter-spacing:.4px;margin:0 0 12px;font-weight:600}
+.verline{display:flex;align-items:center;gap:9px;margin-top:11px;flex-wrap:wrap}
+.verline .bid{font-size:11.5px;background:rgba(255,255,255,.16);padding:3px 11px;
+  border-radius:999px;letter-spacing:.3px}
+.verline button{border:1px solid rgba(255,255,255,.38);background:rgba(255,255,255,.10);
+  color:#fff;padding:4px 13px;border-radius:999px;font-size:11.5px;font-family:inherit;
+  cursor:pointer;transition:.15s;white-space:nowrap}
+.verline button:hover{background:rgba(255,255,255,.26)}
+.verline button:disabled{opacity:.55;cursor:default}
+.verline .state{font-size:11.5px;color:#9BE3A8}
 .tip{position:fixed;pointer-events:none;background:rgba(20,28,42,.95);color:#fff;
   padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.6;z-index:99;
   opacity:0;transition:opacity .12s;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.24)}
@@ -111,8 +123,13 @@ svg{display:block;width:100%;height:auto;overflow:visible}
 <header>
   <h1>AI 与词元经济数据看板</h1>
   <div class="sub">算力 · 能耗 · 词元价格 · 资本市场的十年变化　｜　数据均为公开可核查来源</div>
-  <div class="meta">为 Find「凡能仙·今经乐道」经济热点分析大赛整理　·　2026-10-11　·　
+  <div class="meta">为 Find「凡能仙·今经乐道」经济热点分析大赛整理　·　
     价格数据：LiteLLM 官方挂牌价库　·　发布日期：OpenRouter 模型时间戳</div>
+  <div class="verline">
+    <span class="bid">版本 2026-10-11 18:05</span>
+    <button id="btnReload" type="button">检查更新 / 强制刷新</button>
+    <span class="state" id="verState"></span>
+  </div>
 </header>
 <nav id="nav"></nav>
 <main id="view"></main>
@@ -139,6 +156,59 @@ function el(tag, attrs, text){
 const fmt = v => (v >= 100 ? Math.round(v) : v >= 10 ? v.toFixed(1) : v >= 1 ? v.toFixed(2) : v.toFixed(3));
 const V = DATA.vendors;
 const fmtDate = d => d ? d.slice(0, 7) : '—';
+
+/* ---------------- 构建版本与缓存刷新 ---------------- */
+const BUILD_ID = '2026-10-11 18:05';
+(function(){
+  const isHttp = location.protocol === 'http:' || location.protocol === 'https:';
+  const st = document.getElementById('verState');
+  const btn = document.getElementById('btnReload');
+
+  function dirOf(){
+    // 取当前路径所在目录（GitHub Pages 上目录会返回 index.html）
+    return location.pathname.replace(/[^/]*$/, '') || '/';
+  }
+  function hardReload(force){
+    const u = new URL(location.href);
+    if (force) u.searchParams.set('v', Date.now().toString(36));
+    else u.searchParams.set('v', BUILD_ID);
+    u.searchParams.set('_', Date.now().toString(36));
+    location.replace(u.toString());
+  }
+  function check(manual){
+    if (!isHttp) {
+      if (st) st.textContent = '本地文件模式，无需检查';
+      if (manual) setTimeout(() => hardReload(true), 260);
+      return;
+    }
+    if (st) st.textContent = manual ? '正在检查…' : '';
+    if (btn) btn.disabled = true;
+    fetch(dirOf() + '?_=' + Date.now().toString(36), {cache: 'no-store'})
+      .then(r => r.ok ? r.text() : Promise.reject(new Error('HTTP ' + r.status)))
+      .then(t => {
+        const m = t.match(/BUILD_ID\s*=\s*['"]([^'"]+)['"]/);
+        if (st) st.textContent = '';
+        if (btn) btn.disabled = false;
+        if (!m) { if (manual) hardReload(true); return; }
+        if (m[1] === BUILD_ID) {
+          if (st) st.textContent = manual ? '已是最新版本' : '';
+          if (manual) setTimeout(() => { if (st) st.textContent = ''; }, 2600);
+        } else {
+          if (st) st.textContent = '发现新版本，正在刷新…';
+          hardReload(false);
+        }
+      })
+      .catch(() => {
+        if (btn) btn.disabled = false;
+        if (st) st.textContent = manual ? '检查失败，已强制刷新' : '';
+        if (manual) setTimeout(() => hardReload(true), 500);
+      });
+  }
+  if (btn) btn.addEventListener('click', () => check(true));
+  // 仅当 URL 未带版本参数时自动检查，避免反复刷新
+  const cur = new URL(location.href).searchParams.get('v');
+  if (!cur) setTimeout(() => check(false), 400);
+})();
 
 /* ---------------- 通用：纵坐标控件（刻度类型 + 上下限） ---------------- */
 const AX = {};
